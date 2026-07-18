@@ -1,0 +1,71 @@
+{
+  "namespace": "pc",
+  "method": "get_note_info",
+  "result": [
+    true,
+    "success",
+    {
+      "data": {
+        "items": [
+          {
+            "id": "demo-note-1",
+            "url": "https://www.xiaohongshu.com/explore/demo-note-1",
+            "note_card": {
+              "type": "normal",
+              "title": "Small city weekend travel plan",
+              "desc": "A compact two-day route with food, photos, and low-budget stays.",
+              "time": "2026-07-01",
+              "ip_location": "Shanghai",
+              "user": {
+                "user_id": "demo-user-1",
+                "nickname": "Travel Demo"
+              },
+              "interact_info": {
+                "liked_count": "1024",
+                "collected_count": "865",
+                "comment_count": "76",
+                "share_count": "31"
+              },
+              "tag_list": [
+                {"name": "travel"},
+                {"name": "weekend"}
+              ],
+              "comments": [
+                {
+                  "id": "demo-comment-1",
+                  "note_id": "demo-note-1",
+                  "content": "路线很实用，想知道住宿预算。",
+                  "like_count": "12",
+                  "user_info": {
+                    "user_id": "comment-user-1",
+                    "nickname": "Budget Reader"
+                  },
+                  "sub_comments": [
+                    {
+                      "id": "demo-comment-1-1",
+                      "note_id": "demo-note-1",
+                      "content": "同问，最好有酒店清单。",
+                      "like_count": "3",
+                      "user_info": {
+                        "user_id": "comment-user-2",
+                        "nickname": "Planner"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "image_list": [
+                {
+                  "info_list": [
+                    {"url": "https://example.com/small.jpg"},
+                    {"url": "https://example.com/large.jpg"}
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

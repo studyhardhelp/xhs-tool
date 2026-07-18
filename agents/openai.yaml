@@ -1,0 +1,4 @@
+interface:
+  display_name: "XHS Research"
+  short_description: "Research authorized Xiaohongshu notes, comments, trends, and reports."
+  default_prompt: "Research an authorized Xiaohongshu topic, collect a small evidence sample, and generate a structured report with next-step options."

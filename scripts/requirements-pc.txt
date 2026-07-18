@@ -1,0 +1,5 @@
+openpyxl>=3.1.0
+PyExecJS
+requests
+loguru
+playwright
