@@ -152,16 +152,17 @@ Set up local browser login for non-technical users:
 .venv/bin/python scripts/xhs_auth.py status --json
 ```
 
-By default, the login helper tries installed Chrome, Edge, Chrome for Testing, common browser executable paths, then Playwright bundled Chromium.
-If no controllable browser is found, it automatically installs Playwright Chromium and retries.
-To force a specific browser:
+By default, the login helper uses only Playwright bundled Chromium so ordinary users do not need Chrome or Edge installed.
+If bundled Chromium is missing, it automatically installs Playwright Chromium and retries.
+For debugging only, opt into installed browsers:
 
 ```bash
+.venv/bin/python scripts/xhs_auth.py login --browser-mode auto --wait-auto
 .venv/bin/python scripts/xhs_auth.py login --channel chrome --wait-auto
 .venv/bin/python scripts/xhs_auth.py login --executable-path "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --wait-auto
 ```
 
-The system default browser can be used only for manual login/cookie-copy fallback; automatic auth export requires a Playwright-controlled Chromium browser.
+The system default browser should not be used for normal skill auth because automatic auth export requires a Playwright-controlled Chromium browser.
 To disable automatic browser installation:
 
 ```bash

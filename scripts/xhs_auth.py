@@ -224,14 +224,18 @@ def build_launch_candidates(args: argparse.Namespace) -> list[dict]:
     candidates = []
     if args.executable_path:
         candidates.append((f"executable: {args.executable_path}", {**base, "executable_path": args.executable_path}))
+        return candidates
     if args.channel:
         candidates.append((f"channel: {args.channel}", {**base, "channel": args.channel}))
         return candidates
-    for channel in ["chrome", "msedge", "chrome-beta", "chrome-dev", "chrome-canary"]:
-        candidates.append((f"channel: {channel}", {**base, "channel": channel}))
-    for path in common_browser_paths():
-        candidates.append((f"executable: {path}", {**base, "executable_path": path}))
-    candidates.append(("Playwright bundled chromium", dict(base)))
+
+    if args.browser_mode in {"bundled", "auto"}:
+        candidates.append(("Playwright bundled chromium", dict(base)))
+    if args.browser_mode in {"auto", "installed"}:
+        for channel in ["chrome", "msedge", "chrome-beta", "chrome-dev", "chrome-canary"]:
+            candidates.append((f"channel: {channel}", {**base, "channel": channel}))
+        for path in common_browser_paths():
+            candidates.append((f"executable: {path}", {**base, "executable_path": path}))
     return candidates
 
 
@@ -262,8 +266,8 @@ def launch_chromium(playwright, args: argparse.Namespace):
     browser, errors = try_launch_chromium(playwright, args)
     if browser:
         return browser
-    if args.auto_install_browser and not args.channel and not args.executable_path:
-        print("No controllable Chrome/Edge browser found. Installing Playwright Chromium...")
+    if args.auto_install_browser and args.browser_mode in {"bundled", "auto"} and not args.channel and not args.executable_path:
+        print("Playwright bundled Chromium is not available. Installing it now...")
         success, output = install_playwright_chromium()
         if success:
             browser, retry_errors = try_launch_chromium(playwright, args)
@@ -276,11 +280,10 @@ def launch_chromium(playwright, args: argparse.Namespace):
         "Could not open a visible browser for Xiaohongshu login.\n"
         "Tried:\n"
         + "\n".join(errors)
-        + "\n\nIf Chrome is installed, try:\n"
-        "  .venv/bin/python scripts/xhs_auth.py login --channel chrome --verbose\n"
-        "If Chrome is not installed, retry with automatic Playwright Chromium install:\n"
+        + "\n\nRetry with automatic Playwright Chromium install:\n"
         "  .venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto\n"
-        "If you only want to open the system default browser, use it for manual login/cookie copy; automatic cookie export requires a Playwright-controlled Chromium browser."
+        "For debugging only, you can opt into installed browsers with:\n"
+        "  .venv/bin/python scripts/xhs_auth.py login --browser-mode auto --verbose --wait-auto"
     )
 
 
@@ -413,8 +416,14 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     login_parser = subparsers.add_parser("login", help="Open a browser and save local XHS cookies after user login.")
-    login_parser.add_argument("--channel", default="", help="Optional Playwright browser channel, e.g. chrome or msedge. If omitted, auto-detect.")
+    login_parser.add_argument("--channel", default="", help="Optional Playwright browser channel, e.g. chrome or msedge. Overrides --browser-mode.")
     login_parser.add_argument("--executable-path", default="", help="Optional browser executable path.")
+    login_parser.add_argument(
+        "--browser-mode",
+        choices=["bundled", "auto", "installed"],
+        default="bundled",
+        help="Browser selection mode. Default uses only Playwright bundled Chromium.",
+    )
     login_parser.add_argument("--slow-mo", type=int, default=0)
     login_parser.add_argument("--verbose", action="store_true", help="Print browser launch attempts.")
     login_parser.add_argument("--show-redacted", action="store_true", help="Print redacted cookie values for debugging.")
