@@ -39,5 +39,13 @@ cd "${SKILL_DIR}"
 .venv/bin/pip install -r scripts/requirements-pc.txt
 npm ci --prefix scripts --ignore-scripts --no-audit --no-fund
 
+if [[ "${XHS_SKIP_BROWSER_INSTALL:-0}" == "1" ]]; then
+  echo "Skipped Playwright Chromium install because XHS_SKIP_BROWSER_INSTALL=1."
+else
+  export PLAYWRIGHT_BROWSERS_PATH="${SKILL_DIR}/.browsers"
+  .venv/bin/python -m playwright install chromium
+fi
+
 echo "xhs-tool environment is ready."
+echo "Browser cache: ${SKILL_DIR}/.browsers"
 echo "Next: .venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto"

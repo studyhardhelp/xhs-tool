@@ -144,6 +144,9 @@ bash scripts/bootstrap_env.sh
 It supports Python 3.9 through current Python 3 releases. Python 3.0-3.8 are not
 supported because the browser and spreadsheet dependencies no longer support those
 end-of-life runtimes reliably. The signing runtime also requires Node.js 18+ and npm.
+By default, it also installs Playwright Chromium into `<skill-dir>/.browsers/`.
+This is a skill-local browser cache, not a system Chrome/Edge installation.
+Set `XHS_SKIP_BROWSER_INSTALL=1` only when preparing a data-import-only environment.
 
 Set up local browser login for non-technical users:
 
@@ -152,8 +155,8 @@ Set up local browser login for non-technical users:
 .venv/bin/python scripts/xhs_auth.py status --json
 ```
 
-By default, the login helper uses only Playwright bundled Chromium so ordinary users do not need Chrome or Edge installed.
-If bundled Chromium is missing, it automatically installs Playwright Chromium and retries.
+By default, the login helper uses only the Playwright Chromium under `<skill-dir>/.browsers/` so ordinary users do not need Chrome or Edge installed.
+If that local Chromium is missing, it automatically installs Playwright Chromium into the same skill-local browser cache and retries.
 For debugging only, opt into installed browsers:
 
 ```bash

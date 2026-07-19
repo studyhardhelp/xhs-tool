@@ -1,4 +1,5 @@
 .venv/
+.browsers/
 .secrets/
 scripts/node_modules/
 scripts/__pycache__/

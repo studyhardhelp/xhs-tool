@@ -17,6 +17,7 @@ from collect_notes import resolve_tool, validate_cookie
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BROWSERS_PATH = PROJECT_ROOT / ".browsers"
 COOKIE_PATH = PROJECT_ROOT / ".secrets" / "xhs_cookie.txt"
 STATE_PATH = PROJECT_ROOT / ".secrets" / "xhs_auth_state.json"
 AUTH_META_PATH = PROJECT_ROOT / ".secrets" / "xhs_auth_meta.json"
@@ -240,6 +241,7 @@ def build_launch_candidates(args: argparse.Namespace) -> list[dict]:
 
 
 def install_playwright_chromium() -> tuple[bool, str]:
+    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(BROWSERS_PATH))
     command = [sys.executable, "-m", "playwright", "install", "chromium"]
     completed = subprocess.run(command, text=True, capture_output=True, check=False, timeout=600)
     output = (completed.stdout + "\n" + completed.stderr).strip()
@@ -304,6 +306,7 @@ def wait_for_login_completion(page, context, timeout_seconds: int, poll_seconds:
 
 
 def login(args: argparse.Namespace) -> None:
+    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(BROWSERS_PATH))
     try:
         from playwright.sync_api import sync_playwright
     except ImportError as exc:

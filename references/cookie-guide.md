@@ -11,7 +11,8 @@ bash scripts/bootstrap_env.sh
 ```
 
 The helper uses only Playwright bundled Chromium by default, so the user does not need Chrome or Edge installed.
-If bundled Chromium is missing, it automatically installs Playwright Chromium and retries.
+`bash scripts/bootstrap_env.sh` installs that Chromium into `<skill-dir>/.browsers/`, which is a skill-local browser cache rather than a system Chrome/Edge installation.
+If local Chromium is missing, the login helper automatically installs it into the same skill-local browser cache and retries.
 Installed Chrome/Edge should be used only for debugging:
 
 ```bash
