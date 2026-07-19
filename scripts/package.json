@@ -1,5 +1,5 @@
 {
-  "name": "xhs-apis-skill-runtime",
+  "name": "xhs-tool-runtime",
   "private": true,
   "dependencies": {
     "crypto-js": "4.2.0",

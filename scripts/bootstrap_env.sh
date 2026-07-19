@@ -39,5 +39,5 @@ cd "${SKILL_DIR}"
 .venv/bin/pip install -r scripts/requirements-pc.txt
 npm ci --prefix scripts --ignore-scripts --no-audit --no-fund
 
-echo "xhs-report environment is ready."
+echo "xhs-tool environment is ready."
 echo "Next: .venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto"

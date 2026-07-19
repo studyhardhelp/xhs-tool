@@ -37,7 +37,7 @@ def chat_completion(prompt: str) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Call an OpenAI-compatible token platform for XHS report insights.")
+    parser = argparse.ArgumentParser(description="Call an OpenAI-compatible token platform for xhs-tool insights.")
     parser.add_argument("--prompt-file", required=True)
     parser.add_argument("--out", required=True)
     args = parser.parse_args()

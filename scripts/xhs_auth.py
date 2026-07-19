@@ -409,7 +409,7 @@ def check(_: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Local Xiaohongshu browser-login helper for xhs-report.")
+    parser = argparse.ArgumentParser(description="Local Xiaohongshu browser-login helper for xhs-tool.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     login_parser = subparsers.add_parser("login", help="Open a browser and save local XHS cookies after user login.")

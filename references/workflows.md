@@ -2,7 +2,7 @@
 
 ## Product Shape
 
-Treat `xhs-report` as an XHS research assistant rather than only a report generator.
+Treat `xhs-tool` as an XHS research assistant rather than only a report generator.
 The normal loop is:
 
 1. Clarify the user's goal and map it to a workflow.

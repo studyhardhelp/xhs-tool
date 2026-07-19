@@ -1,9 +1,9 @@
 ---
-name: xhs-report
+name: xhs-tool
 description: Use this skill when Codex needs to research, collect, normalize, analyze, or report on authorized Xiaohongshu/XHS note data. Supports natural-language workflow routing for travel planning, product review, content ideation, comment insight, viral-pattern analysis, single-note analysis, keyword note research, user note collection, raw Spider_XHS/XhsSkills JSON normalization, Markdown/Excel report generation, media URL indexing, and optional OpenAI-compatible token-platform summarization. Use only for user-authorized or otherwise permitted data handling, not for bypassing platform controls, bulk scraping, spam, resale, media misuse, or automated publishing.
 ---
 
-# XHS Report
+# XHS Tool
 
 ## Overview
 
