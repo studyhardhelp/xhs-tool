@@ -6,11 +6,11 @@ For ordinary users, prefer the local browser-login helper:
 
 ```bash
 bash scripts/bootstrap_env.sh
-.venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto
+.venv/bin/python scripts/xhs_auth.py login --channel chrome --verbose --wait-auto
 .venv/bin/python scripts/xhs_auth.py status --json
 ```
 
-The helper uses an installed Chrome/Edge/Chromium by default, so the user does not wait for a browser download.
+The helper uses an installed Chrome/Edge/Chromium by default, so the user does not wait for a browser download. Prefer `--channel chrome` when Chrome is installed.
 If no controllable installed browser is found, stop and ask the user to install Chrome/Edge/Chromium or explicitly allow the optional skill-local Playwright Chromium fallback.
 
 ```bash

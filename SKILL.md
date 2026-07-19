@@ -146,10 +146,10 @@ supported because the browser and spreadsheet dependencies no longer support tho
 end-of-life runtimes reliably. The signing runtime also requires Node.js 18+ and npm.
 It does not install Chromium by default. Set `XHS_INSTALL_BROWSER=1` only when the user explicitly agrees to install the optional skill-local Playwright Chromium fallback under `<skill-dir>/.browsers/`.
 
-Set up local browser login for non-technical users:
+Set up local browser login for non-technical users. Prefer Chrome explicitly when it is available:
 
 ```bash
-.venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto
+.venv/bin/python scripts/xhs_auth.py login --channel chrome --verbose --wait-auto
 .venv/bin/python scripts/xhs_auth.py status --json
 ```
 

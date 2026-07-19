@@ -49,4 +49,4 @@ else
 fi
 
 echo "xhs-tool environment is ready."
-echo "Next: .venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto"
+echo "Next: .venv/bin/python scripts/xhs_auth.py login --channel chrome --verbose --wait-auto"
