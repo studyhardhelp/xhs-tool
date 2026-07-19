@@ -17,13 +17,14 @@ fi
 
 "${PY}" - <<'PY'
 import sys
-if sys.version_info < (3, 10):
-    raise SystemExit(f"Python 3.10+ is required. Found: {sys.version}")
+if sys.version_info < (3, 9):
+    raise SystemExit(f"Python 3.9+ is required. Found: {sys.version}")
 print(f"Using Python: {sys.executable}")
 PY
 
 cd "${SKILL_DIR}"
 "${PY}" -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
 .venv/bin/pip install -r scripts/requirements-pc.txt
 npm install --prefix scripts
 

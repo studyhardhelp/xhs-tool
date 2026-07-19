@@ -87,7 +87,9 @@ bash scripts/bootstrap_env.sh
 ```
 
 `bootstrap_env.sh` uses `PYTHON_BIN` when set, otherwise tries `python3`, then `python`.
-It requires Python 3.10+.
+It supports Python 3.9 through current Python 3 releases. Python 3.0-3.8 are not
+supported because the browser and spreadsheet dependencies no longer support those
+end-of-life runtimes reliably.
 
 Set up local browser login for non-technical users:
 
