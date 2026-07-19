@@ -1,12 +1,13 @@
 # xhs-tool
 
-Codex skill for authorized Xiaohongshu note research, normalization, and report generation.
+Codex skill for authorized Xiaohongshu research, reporting, and conversational content drafting.
 
 ## Capabilities
 
 - Collect one note, keyword samples, or notes from one authorized user profile.
 - Run travel, product-review, content-ideation, comment-insight, viral-pattern, and general research workflows.
 - Normalize notes and comments, rank evidence, and export private JSON, Markdown, and spreadsheet files.
+- Create and refine titles, body copy, hashtags, cover copy, visual systems, and page-by-page carousel plans through AI conversation.
 - Keep media as a URL index. The project does not download media or publish content.
 
 ## Quick Start
@@ -17,6 +18,24 @@ bash scripts/bootstrap_env.sh
 .venv/bin/python scripts/xhs_auth.py status --json
 .venv/bin/python scripts/xhs_workflow.py --workflow auto --topic "your research topic"
 ```
+
+Start a standalone content-creation conversation with the configured OpenAI-compatible Token Platform:
+
+```bash
+.venv/bin/python scripts/xhs_content_chat.py start --brief "给露营新手写一篇装备清单"
+.venv/bin/python scripts/xhs_content_chat.py reply --session "SESSION_ID" --message "改成五个要点，语气更克制"
+```
+
+Add a structured visual plan only when needed:
+
+```bash
+.venv/bin/python scripts/xhs_content_chat.py start \
+  --brief "把露营装备清单做成多页图文" \
+  --pages 6 \
+  --visual-style "自然纪实、清晰编辑感"
+```
+
+The same workflow works directly in Codex by asking `$xhs-tool` to write, revise, or visually direct a draft. Content-chat sessions are private local artifacts and never publish automatically. If the Token Platform is not configured, the standalone command creates a local template draft and reports the fallback.
 
 Live collection is limited to 50 notes, 8 queries, 10 notes per query, and 100
 normalized comments per note. Defaults are smaller. A failed note or query is recorded

@@ -1,14 +1,14 @@
 ---
 name: xhs-tool
-description: Use this skill when Codex needs to research, collect, normalize, analyze, or report on authorized Xiaohongshu/XHS note data. Supports natural-language workflow routing for travel planning, product review, content ideation, comment insight, viral-pattern analysis, single-note analysis, keyword note research, user note collection, raw Spider_XHS/XhsSkills JSON normalization, Markdown/Excel report generation, media URL indexing, and optional OpenAI-compatible token-platform summarization. Use only for user-authorized or otherwise permitted data handling, not for bypassing platform controls, bulk scraping, spam, resale, media misuse, or automated publishing.
+description: Use this skill when Codex needs to research, collect, normalize, analyze, report on, or create draft content and visual plans from authorized Xiaohongshu/XHS data. Supports conversational copywriting, multi-turn refinement, 3:4 covers and carousel planning, page-by-page visual direction, image prompts, layout review, titles, body copy, hashtags, cover copy, travel planning, product review, content ideation, comment insight, viral-pattern analysis, note research, JSON normalization, reports, and optional OpenAI-compatible generation. Use only for permitted data and human-reviewed drafts, not for bypassing platform controls, bulk scraping, spam, resale, media misuse, fabricated claims, or automated publishing.
 ---
 
 # XHS Tool
 
 ## Overview
 
-Use this skill to turn authorized XHS note data into structured files and an analysis report.
-The skill is intentionally business-oriented: understand the user's XHS research goal, collect or import raw data, normalize it into stable fields, then generate Markdown, spreadsheet, and optional media-index outputs.
+Use this skill to research authorized XHS note data or create human-reviewed XHS content drafts through natural-language conversation.
+For research, collect or import data, normalize it, and generate reports. For content creation, turn the user's brief and follow-up messages into titles, body copy, hashtags, cover copy, image suggestions, and compliance notes without publishing.
 
 ## High-Level Workflows
 
@@ -26,6 +26,10 @@ For broad user requests, prefer `scripts/xhs_workflow.py --workflow auto` over m
   Use for爆款拆解、热门笔记共性、标题/标签/互动结构研究.
 - General research: `--workflow general-research`
   Safe fallback for topics that do not match a specialized workflow.
+- Conversational content creation: `scripts/xhs_content_chat.py`
+  Use for requests like “帮我写一篇露营装备清单”“标题更有冲突感”“语气克制一点”. Keep the same session for follow-up edits.
+- Visual content direction: `scripts/xhs_content_chat.py --pages N`
+  Use for covers, 3:4 carousels, page-by-page visual plans, style selection, image prompts, or layout review. Do not force a carousel onto copy-only requests.
 
 Default workflow outputs:
 
@@ -44,6 +48,7 @@ When the user asks broad ranking questions like “当前最热门的话题是�
 ## Workflow
 
 1. Identify the input type:
+   - Content creation or refinement: respond with a draft directly in the AI conversation. Use `scripts/xhs_content_chat.py` when persistent sessions or standalone Token Platform generation are needed.
    - Broad research/task request: use `scripts/xhs_workflow.py --workflow auto`.
    - Single note URL: use `scripts/collect_notes.py --mode note`.
    - Keyword research: use `scripts/collect_notes.py --mode keyword`.
@@ -60,6 +65,52 @@ When the user asks broad ranking questions like “当前最热门的话题是�
 5. For live collection, use a `run_id`. If `--out-dir` is omitted, `scripts/collect_notes.py` writes to `<skill-dir>/runs/<run_id>` and creates `summary.json`.
 
 6. On completion, summarize only the useful outputs and next choices. Do not expose cookie values, raw request headers, or internal auth files.
+
+## Conversational Content Creation
+
+Treat the current AI conversation as the primary interface. Ask only for information that materially changes the draft; otherwise infer a reasonable audience, tone, and goal and label assumptions. Return a usable draft, not a discussion of how to write one.
+
+For the first turn, provide 3-5 title options, one selected title, body copy, hashtags, cover copy, image suggestions, and publishing checks. For follow-up turns, preserve all fields the user did not ask to change. Clearly distinguish researched evidence from creative suggestions, never invent personal experience or performance claims, and keep every result marked as a draft.
+
+Read `references/content-creation.md` before producing or extending a content-creation workflow. Use the session CLI for persistent standalone conversations:
+
+```bash
+.venv/bin/python scripts/xhs_content_chat.py start \
+  --brief "给第一次露营的人写一篇装备清单" \
+  --audience "周末轻量露营新手" \
+  --tone "真诚、实用"
+```
+
+Continue with the returned session ID:
+
+```bash
+.venv/bin/python scripts/xhs_content_chat.py reply \
+  --session "{session_id}" \
+  --message "把标题改得更具体，正文压缩到五个要点"
+
+.venv/bin/python scripts/xhs_content_chat.py show --session "{session_id}"
+```
+
+Sessions are stored privately under `runs/content-chat/<session-id>/` as `session.json`, `draft.json`, and `draft.md`. Without Token Platform configuration, the command writes a local template draft and records a non-fatal fallback reason.
+
+## Visual Content Direction
+
+Read `references/visual-content.md` for cover, carousel, visual-style, image-prompt, or layout-review requests. Match the visual system to the content rather than defaulting to dark technology aesthetics.
+
+When the request is sufficiently specific, proceed with explicit assumptions. When audience, objective, core claim, available assets, and desired action leave materially different visual directions, ask one grouped clarification instead of forcing a fixed questionnaire.
+
+For multi-page requests, create a unified visual direction and page-by-page plan. Lock a 1080x1440px 3:4 canvas, safe margins, color and typography tokens, component language, and page numbering across the series. Give each page one primary communication task and vary only its main visual and information structure.
+
+Use an available image-generation capability only when the user explicitly asks for image files. Generate one representative cover or key page first and request style confirmation before batch generation, unless the user explicitly asks to skip confirmation. Never claim an image was generated unless a real file or returned asset exists. Do not publish the result.
+
+Create a persistent six-page visual draft when needed:
+
+```bash
+.venv/bin/python scripts/xhs_content_chat.py start \
+  --brief "把露营装备清单做成多页小红书图文" \
+  --pages 6 \
+  --visual-style "自然纪实、清晰编辑感"
+```
 
 ## Auth UX And Secret Handling
 
@@ -199,6 +250,8 @@ Force a specific workflow only when the user's intent is clear:
 
 If those variables are missing, reports fall back to deterministic local summaries.
 `scripts/xhs_workflow.py --llm-insights` writes `llm_prompt.md` and `llm_insights.md` only when these variables are configured; otherwise it records a non-fatal `llm_insights_error` in `summary.json`.
+`scripts/xhs_content_chat.py` uses the same variables for multi-turn draft generation. It validates message sizes and response structure, forces `status: draft`, and falls back locally if the model is unavailable or returns malformed content.
+Visual plans remain planning artifacts unless the user explicitly requests image generation; the Token Platform chat endpoint itself does not render images.
 
 ## Boundaries
 
@@ -206,6 +259,8 @@ If those variables are missing, reports fall back to deterministic local summari
 - Keep collection limits small by default.
 - Enforce hard limits of 50 notes, 8 queries, 10 notes per query, and 100 normalized comments per note.
 - Do not add proxy-pool, anti-detection, spam, resale, or automated publishing workflows.
+- Keep generated content as a draft and require human fact, copyright, and compliance review before publication.
+- Do not claim that sampled research proves platform-wide trends, or turn unverified content into factual product, health, finance, or performance claims.
 - Do not download media by default; store URLs unless the user explicitly asks and has rights to use the media.
 - Keep comment exports minimal and analysis-oriented. Do not use comments for outreach or user profiling.
 - Read `references/compliance.md` before extending collection scope.
@@ -217,5 +272,7 @@ If those variables are missing, reports fall back to deterministic local summari
 - Compliance boundaries: `references/compliance.md`
 - Manual cookie handling: `references/cookie-guide.md`
 - High-level workflow guide: `references/workflows.md`
+- Conversational content creation: `references/content-creation.md`
+- Visual content direction and carousel QA: `references/visual-content.md`
 - Read-only API inventory: `references/xhs-api-index.md`
 - Vendored runtime provenance and integrity: `references/runtime-provenance.md`

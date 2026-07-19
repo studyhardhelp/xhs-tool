@@ -1,4 +1,4 @@
 interface:
   display_name: "XHS Tool"
-  short_description: "Research Xiaohongshu notes, comments, and trends."
-  default_prompt: "Use $xhs-tool to research an authorized Xiaohongshu topic and generate a structured evidence report."
+  short_description: "Research XHS and create copy plus visual plans."
+  default_prompt: "Use $xhs-tool to research an authorized Xiaohongshu topic or conversationally create and refine human-reviewed copy and visual direction."

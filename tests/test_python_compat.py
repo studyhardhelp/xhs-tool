@@ -13,6 +13,7 @@ class PythonCompatibilityTests(unittest.TestCase):
     def test_command_modules_import(self):
         __import__("collect_notes")
         __import__("xhs_auth")
+        __import__("xhs_content_chat")
         __import__("xhs_report_lib")
         __import__("xhs_workflow")
 
