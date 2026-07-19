@@ -5,7 +5,7 @@ Use a browser session that the user controls.
 For ordinary users, prefer the local browser-login helper:
 
 ```bash
-scripts/bootstrap_env.sh
+bash scripts/bootstrap_env.sh
 .venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto
 .venv/bin/python scripts/xhs_auth.py status --json
 ```

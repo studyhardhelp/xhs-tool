@@ -83,7 +83,7 @@ Do not include cookie values in the response. For collection commands, prefer re
 Install runtime dependencies for PC data collection:
 
 ```bash
-scripts/bootstrap_env.sh
+bash scripts/bootstrap_env.sh
 ```
 
 `bootstrap_env.sh` uses `PYTHON_BIN` when set, otherwise tries `python3`, then `python`.
