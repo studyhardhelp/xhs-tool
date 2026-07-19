@@ -10,23 +10,17 @@ bash scripts/bootstrap_env.sh
 .venv/bin/python scripts/xhs_auth.py status --json
 ```
 
-The helper uses only Playwright bundled Chromium by default, so the user does not need Chrome or Edge installed.
-`bash scripts/bootstrap_env.sh` installs that Chromium into `<skill-dir>/.browsers/`, which is a skill-local browser cache rather than a system Chrome/Edge installation.
-If local Chromium is missing, the login helper automatically installs it into the same skill-local browser cache and retries.
-Installed Chrome/Edge should be used only for debugging:
+The helper uses an installed Chrome/Edge/Chromium by default, so the user does not wait for a browser download.
+If no controllable installed browser is found, stop and ask the user to install Chrome/Edge/Chromium or explicitly allow the optional skill-local Playwright Chromium fallback.
 
 ```bash
-.venv/bin/python scripts/xhs_auth.py login --browser-mode auto --wait-auto
 .venv/bin/python scripts/xhs_auth.py login --channel chrome --wait-auto
 .venv/bin/python scripts/xhs_auth.py login --executable-path "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --wait-auto
+.venv/bin/python scripts/xhs_auth.py login --browser-mode auto --auto-install-browser --wait-auto
 ```
 
-The system default browser should not be used for normal skill auth because automatic auth export requires a Playwright-controlled Chromium browser.
-To disable automatic browser installation:
-
-```bash
-.venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto --no-auto-install-browser
-```
+The system default browser should not be used for normal skill auth because automatic auth export requires a Playwright-controlled Chromium-family browser.
+The optional fallback downloads Chromium into `<skill-dir>/.browsers/`, not as a system Chrome/Edge installation.
 
 The helper opens a visible browser, waits for the user to log in, extracts only Xiaohongshu cookies, and stores them in `<skill-dir>/.secrets/xhs_cookie.txt`.
 It also writes non-secret metadata to `<skill-dir>/.secrets/xhs_auth_meta.json`, including saved time, key-cookie presence, and latest live API check status.

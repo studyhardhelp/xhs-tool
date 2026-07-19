@@ -230,13 +230,13 @@ def build_launch_candidates(args: argparse.Namespace) -> list[dict]:
         candidates.append((f"channel: {args.channel}", {**base, "channel": args.channel}))
         return candidates
 
-    if args.browser_mode in {"bundled", "auto"}:
-        candidates.append(("Playwright bundled chromium", dict(base)))
     if args.browser_mode in {"auto", "installed"}:
         for channel in ["chrome", "msedge", "chrome-beta", "chrome-dev", "chrome-canary"]:
             candidates.append((f"channel: {channel}", {**base, "channel": channel}))
         for path in common_browser_paths():
             candidates.append((f"executable: {path}", {**base, "executable_path": path}))
+    if args.browser_mode in {"bundled", "auto"}:
+        candidates.append(("Playwright bundled chromium", dict(base)))
     return candidates
 
 
@@ -269,7 +269,7 @@ def launch_chromium(playwright, args: argparse.Namespace):
     if browser:
         return browser
     if args.auto_install_browser and args.browser_mode in {"bundled", "auto"} and not args.channel and not args.executable_path:
-        print("Playwright bundled Chromium is not available. Installing it now...")
+        print("Installing skill-local Playwright Chromium fallback...")
         success, output = install_playwright_chromium()
         if success:
             browser, retry_errors = try_launch_chromium(playwright, args)
@@ -282,10 +282,9 @@ def launch_chromium(playwright, args: argparse.Namespace):
         "Could not open a visible browser for Xiaohongshu login.\n"
         "Tried:\n"
         + "\n".join(errors)
-        + "\n\nRetry with automatic Playwright Chromium install:\n"
-        "  .venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto\n"
-        "For debugging only, you can opt into installed browsers with:\n"
-        "  .venv/bin/python scripts/xhs_auth.py login --browser-mode auto --verbose --wait-auto"
+        + "\n\nInstall Chrome/Edge/Chromium, or explicitly allow a skill-local Playwright Chromium fallback:\n"
+        "  .venv/bin/python scripts/xhs_auth.py login --browser-mode auto --auto-install-browser --verbose --wait-auto\n"
+        "This fallback downloads Chromium under <skill-dir>/.browsers/."
     )
 
 
@@ -306,7 +305,8 @@ def wait_for_login_completion(page, context, timeout_seconds: int, poll_seconds:
 
 
 def login(args: argparse.Namespace) -> None:
-    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(BROWSERS_PATH))
+    if args.browser_mode in {"bundled", "auto"}:
+        os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(BROWSERS_PATH))
     try:
         from playwright.sync_api import sync_playwright
     except ImportError as exc:
@@ -424,15 +424,15 @@ def main() -> None:
     login_parser.add_argument(
         "--browser-mode",
         choices=["bundled", "auto", "installed"],
-        default="bundled",
-        help="Browser selection mode. Default uses only Playwright bundled Chromium.",
+        default="installed",
+        help="Browser selection mode. Default uses an installed Chrome/Edge/Chromium.",
     )
     login_parser.add_argument("--slow-mo", type=int, default=0)
     login_parser.add_argument("--verbose", action="store_true", help="Print browser launch attempts.")
     login_parser.add_argument("--show-redacted", action="store_true", help="Print redacted cookie values for debugging.")
     login_parser.add_argument("--wait-auto", action="store_true", help="Automatically wait until usable local auth is detected.")
     login_parser.add_argument("--timeout", type=int, default=180, help="Maximum seconds to wait with --wait-auto.")
-    login_parser.add_argument("--auto-install-browser", action=argparse.BooleanOptionalAction, default=True, help="Install Playwright Chromium automatically if no controllable browser is found.")
+    login_parser.add_argument("--auto-install-browser", action=argparse.BooleanOptionalAction, default=False, help="Install skill-local Playwright Chromium fallback when no controllable browser is found.")
     login_parser.set_defaults(func=login)
 
     status_parser = subparsers.add_parser("status", help="Show whether local XHS auth exists.")

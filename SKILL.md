@@ -117,7 +117,7 @@ Create a persistent six-page visual draft when needed:
 Never show raw or redacted cookies in conversation unless the user explicitly asks for debugging output.
 Do not paste `XHS_COOKIE` values into chat, logs, generated reports, or command examples shown to the user.
 
-Before live collection, run `scripts/xhs_auth.py status --json`. If local auth is not usable, start the browser login helper with `--wait-auto` and tell the user exactly:
+Before live collection, run `scripts/xhs_auth.py status --json`. If local auth is not usable, start the browser login helper with `--wait-auto`; by default it uses the user's installed Chrome/Edge/Chromium and does not download a browser. Tell the user exactly:
 
 ```text
 请在弹出的小红书页面完成登录, 登录成功后我会自动继续采集。
@@ -129,7 +129,7 @@ If the user already gave the keyword/count/task, keep that context in the senten
 请在弹出的小红书页面完成登录, 登录成功后我会自动采集“小众旅游”关键词下 3 篇笔记及评论，并输出报告。
 ```
 
-Keep the `scripts/xhs_auth.py login --wait-auto` command running until it exits or times out. Then run `scripts/xhs_auth.py status --json` or `check`.
+Keep the `scripts/xhs_auth.py login --wait-auto` command running until it exits or times out. If no controllable installed browser is found, stop and report that real-time sampling needs either Chrome/Edge/Chromium installed or explicit permission to install the skill-local Playwright Chromium fallback. Do not silently download a browser. Then run `scripts/xhs_auth.py status --json` or `check`.
 Do not include cookie values in the response. Collection commands read `<skill-dir>/.secrets/xhs_cookie.txt` or `XHS_COOKIE`; they do not accept cookies as command-line arguments.
 
 ## Commands
@@ -144,9 +144,7 @@ bash scripts/bootstrap_env.sh
 It supports Python 3.9 through current Python 3 releases. Python 3.0-3.8 are not
 supported because the browser and spreadsheet dependencies no longer support those
 end-of-life runtimes reliably. The signing runtime also requires Node.js 18+ and npm.
-By default, it also installs Playwright Chromium into `<skill-dir>/.browsers/`.
-This is a skill-local browser cache, not a system Chrome/Edge installation.
-Set `XHS_SKIP_BROWSER_INSTALL=1` only when preparing a data-import-only environment.
+It does not install Chromium by default. Set `XHS_INSTALL_BROWSER=1` only when the user explicitly agrees to install the optional skill-local Playwright Chromium fallback under `<skill-dir>/.browsers/`.
 
 Set up local browser login for non-technical users:
 
@@ -155,22 +153,16 @@ Set up local browser login for non-technical users:
 .venv/bin/python scripts/xhs_auth.py status --json
 ```
 
-By default, the login helper uses only the Playwright Chromium under `<skill-dir>/.browsers/` so ordinary users do not need Chrome or Edge installed.
-If that local Chromium is missing, it automatically installs Playwright Chromium into the same skill-local browser cache and retries.
-For debugging only, opt into installed browsers:
+By default, the login helper uses an installed Chrome/Edge/Chromium so ordinary users do not wait for a browser download.
+If no controllable installed browser is found, do not continue with non-sampled output. Ask the user to install Chrome/Edge/Chromium or explicitly allow the optional skill-local Chromium fallback:
 
 ```bash
-.venv/bin/python scripts/xhs_auth.py login --browser-mode auto --wait-auto
 .venv/bin/python scripts/xhs_auth.py login --channel chrome --wait-auto
 .venv/bin/python scripts/xhs_auth.py login --executable-path "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --wait-auto
+.venv/bin/python scripts/xhs_auth.py login --browser-mode auto --auto-install-browser --wait-auto
 ```
 
-The system default browser should not be used for normal skill auth because automatic auth export requires a Playwright-controlled Chromium browser.
-To disable automatic browser installation:
-
-```bash
-.venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto --no-auto-install-browser
-```
+The system default browser should not be used for normal skill auth because automatic auth export requires a Playwright-controlled Chromium-family browser launched by Playwright. The optional fallback downloads Chromium under `<skill-dir>/.browsers/`, not as a system Chrome installation.
 
 The API command exposes only a read-only research allowlist. Creator publishing, media upload, private notification, and no-watermark methods are not callable through this skill.
 
