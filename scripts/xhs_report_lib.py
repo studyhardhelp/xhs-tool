@@ -6,8 +6,11 @@ import json
 import math
 import re
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+
+from xhs_security import protect_private_file, write_private_json, write_private_text
 
 
 NORMALIZED_FIELDS = [
@@ -46,15 +49,25 @@ COMMENT_FIELDS = [
     "ip_location",
 ]
 
+CHINESE_STOP_WORDS = {
+    "一个", "一些", "这个", "那个", "就是", "还是", "可以", "没有", "不是", "自己", "我们",
+    "你们", "他们", "真的", "感觉", "比较", "非常", "已经", "因为", "所以", "但是", "如果",
+    "然后", "怎么", "什么", "小红书", "笔记", "分享", "一下", "今天", "现在", "大家",
+}
+FALLBACK_CHINESE_TERMS = {
+    "攻略", "路线", "住宿", "酒店", "预算", "交通", "自驾", "亲子", "景点", "美食", "排队",
+    "天气", "避坑", "推荐", "不推荐", "值得", "价格", "便宜", "贵", "好用", "难用", "过敏",
+    "复购", "成分", "平替", "测评", "真实", "体验", "问题", "售后", "标题", "封面", "收藏",
+    "评论", "点赞", "视频", "图片", "清单", "对比", "新手", "实用", "踩雷", "后悔", "适合",
+}
+
 
 def read_json(path: str | Path) -> Any:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
 def write_json(path: str | Path, data: Any) -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_private_json(path, data)
 
 
 def as_int(value: Any) -> int:
@@ -273,19 +286,68 @@ def load_normalized(path: str | Path) -> list[dict[str, Any]]:
     return [normalize_note(item) for item in data if isinstance(item, dict)]
 
 
-def interaction_score(note: dict[str, Any]) -> int:
-    return (
-        as_int(note.get("liked_count"))
-        + as_int(note.get("collected_count")) * 2
-        + as_int(note.get("comment_count")) * 3
-        + as_int(note.get("share_count")) * 2
+def parse_publish_datetime(value: Any) -> datetime | None:
+    if value in (None, ""):
+        return None
+    if isinstance(value, (int, float)) or str(value).strip().isdigit():
+        timestamp = float(value)
+        if timestamp > 10_000_000_000:
+            timestamp /= 1000
+        if timestamp < 1_000_000_000:
+            return None
+        try:
+            return datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
+    text = str(value).strip().replace("Z", "+00:00")
+    for candidate in (text, text[:19], text[:10]):
+        try:
+            parsed = datetime.fromisoformat(candidate)
+            return parsed.replace(tzinfo=parsed.tzinfo or timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+def interaction_score(note: dict[str, Any], now: datetime | None = None) -> int:
+    weighted = (
+        math.log1p(as_int(note.get("liked_count")))
+        + math.log1p(as_int(note.get("collected_count"))) * 1.5
+        + math.log1p(as_int(note.get("comment_count"))) * 1.7
+        + math.log1p(as_int(note.get("share_count"))) * 1.2
     )
+    published = parse_publish_datetime(note.get("publish_time"))
+    recency = 1.0
+    if published:
+        current = now or datetime.now(timezone.utc)
+        current = current.replace(tzinfo=current.tzinfo or timezone.utc)
+        age_days = max(0.0, (current - published.astimezone(timezone.utc)).total_seconds() / 86400)
+        recency += 0.3 * math.exp(-age_days / 180)
+    return round(weighted * recency * 100)
 
 
 def tokenize_chinese_and_ascii(text: str) -> list[str]:
-    words = re.findall(r"[\u4e00-\u9fff]{2,}|[A-Za-z][A-Za-z0-9_-]{2,}", text or "")
+    text = text or ""
+    words = [word.lower() for word in re.findall(r"[A-Za-z][A-Za-z0-9_-]{2,}", text)]
+    for chunk in re.findall(r"[\u4e00-\u9fff]+", text):
+        words.extend(_cut_chinese_chunk(chunk))
     stop = {"the", "and", "with", "this", "that", "for", "you", "your"}
-    return [word.lower() for word in words if word.lower() not in stop]
+    return [word for word in words if len(word) >= 2 and word not in stop and word not in CHINESE_STOP_WORDS]
+
+
+def _cut_chinese_chunk(chunk: str) -> list[str]:
+    try:
+        import jieba
+
+        jieba.setLogLevel(20)
+        return [word.strip() for word in jieba.cut(chunk) if len(word.strip()) >= 2]
+    except ImportError:
+        matched = [term for term in FALLBACK_CHINESE_TERMS if term in chunk]
+        if matched:
+            return sorted(set(matched), key=lambda term: chunk.find(term))
+        if len(chunk) <= 4:
+            return [chunk]
+        return [chunk[index:index + 2] for index in range(0, len(chunk) - 1, 2)]
 
 
 def summarize_notes(notes: list[dict[str, Any]]) -> dict[str, Any]:
@@ -407,9 +469,7 @@ def build_markdown_report(notes: list[dict[str, Any]], source: str = "") -> str:
 
 
 def write_markdown_report(path: str | Path, notes: list[dict[str, Any]], source: str = "") -> None:
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(build_markdown_report(notes, source), encoding="utf-8")
+    write_private_text(path, build_markdown_report(notes, source))
 
 
 def write_csv(path: str | Path, notes: list[dict[str, Any]]) -> None:
@@ -424,6 +484,7 @@ def write_csv(path: str | Path, notes: list[dict[str, Any]]) -> None:
             row["images"] = "\n".join(map(str, ensure_list(row.get("images"))))
             row["comments"] = json.dumps(row.get("comments") or [], ensure_ascii=False)
             writer.writerow(row)
+    protect_private_file(path)
 
 
 def write_comments_csv(path: str | Path, comments: list[dict[str, Any]]) -> None:
@@ -434,6 +495,7 @@ def write_comments_csv(path: str | Path, comments: list[dict[str, Any]]) -> None
         writer.writeheader()
         for comment in comments:
             writer.writerow(comment)
+    protect_private_file(path)
 
 
 def write_xlsx(path: str | Path, notes: list[dict[str, Any]]) -> bool:
@@ -456,6 +518,7 @@ def write_xlsx(path: str | Path, notes: list[dict[str, Any]]) -> bool:
             row.append(value)
         ws.append(row)
     wb.save(path)
+    protect_private_file(path)
     return True
 
 
@@ -473,6 +536,7 @@ def write_comments_xlsx(path: str | Path, comments: list[dict[str, Any]]) -> boo
     for comment in comments:
         ws.append([comment.get(field, "") for field in COMMENT_FIELDS])
     wb.save(path)
+    protect_private_file(path)
     return True
 
 

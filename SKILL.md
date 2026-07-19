@@ -24,6 +24,8 @@ For broad user requests, prefer `scripts/xhs_workflow.py --workflow auto` over m
   Use when the user wants评论高频问题、情绪、痛点、FAQ、需求洞察.
 - Viral pattern analysis: `--workflow viral-pattern`
   Use for爆款拆解、热门笔记共性、标题/标签/互动结构研究.
+- General research: `--workflow general-research`
+  Safe fallback for topics that do not match a specialized workflow.
 
 Default workflow outputs:
 
@@ -31,7 +33,8 @@ Default workflow outputs:
 - `notes.normalized.json` and note table: normalized sampled notes.
 - `comments.normalized.json` and comment table: normalized comments when enabled.
 - `media_index.json`: image/video URL index only; do not download media by default.
-- `summary.json`: run metadata and output paths.
+- `summary.json`: run metadata, partial failures, evidence quality, and output paths.
+- `checkpoint.json` and partial JSON files: incremental recovery data while collection is running.
 - Optional `llm_insights.md`: generated only with `--llm-insights` and configured token-platform environment variables.
 
 After producing the report, proactively ask whether the user wants a follow-up package such as: deeper report refinement, note link library, comment FAQ, media URL index review, or authorized media download. Media download requires explicit confirmation of use rights and purpose.
@@ -76,7 +79,7 @@ If the user already gave the keyword/count/task, keep that context in the senten
 ```
 
 Keep the `scripts/xhs_auth.py login --wait-auto` command running until it exits or times out. Then run `scripts/xhs_auth.py status --json` or `check`.
-Do not include cookie values in the response. For collection commands, prefer reading `<skill-dir>/.secrets/xhs_cookie.txt`; avoid passing `--cookies-str` unless the user explicitly provided a cookie in the current shell environment.
+Do not include cookie values in the response. Collection commands read `<skill-dir>/.secrets/xhs_cookie.txt` or `XHS_COOKIE`; they do not accept cookies as command-line arguments.
 
 ## Commands
 
@@ -89,7 +92,7 @@ bash scripts/bootstrap_env.sh
 `bootstrap_env.sh` uses `PYTHON_BIN` when set, otherwise tries `python3`, then `python`.
 It supports Python 3.9 through current Python 3 releases. Python 3.0-3.8 are not
 supported because the browser and spreadsheet dependencies no longer support those
-end-of-life runtimes reliably.
+end-of-life runtimes reliably. The signing runtime also requires Node.js 18+ and npm.
 
 Set up local browser login for non-technical users:
 
@@ -114,11 +117,7 @@ To disable automatic browser installation:
 .venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto --no-auto-install-browser
 ```
 
-Install full creator-platform dependencies only when publishing/media upload workflows are explicitly needed:
-
-```bash
-.venv/bin/pip install -r scripts/requirements.txt
-```
+The API command exposes only a read-only research allowlist. Creator publishing, media upload, private notification, and no-watermark methods are not callable through this skill.
 
 Normalize an existing raw JSON file:
 
@@ -148,7 +147,8 @@ Collect keyword notes:
   --mode keyword \
   --query "small city travel" \
   --limit 20 \
-  --include-comments
+  --include-comments \
+  --comment-limit 50
 ```
 
 Run a high-level workflow:
@@ -157,7 +157,8 @@ Run a high-level workflow:
 .venv/bin/python scripts/xhs_workflow.py \
   --workflow auto \
   --topic "山东济南 锡林郭勒 一家3口 5日游" \
-  --max-notes 25
+  --max-notes 25 \
+  --comment-limit 50
 ```
 
 Add token-platform LLM insights when the environment is configured:
@@ -203,6 +204,7 @@ If those variables are missing, reports fall back to deterministic local summari
 
 - Require user authorization for live collection.
 - Keep collection limits small by default.
+- Enforce hard limits of 50 notes, 8 queries, 10 notes per query, and 100 normalized comments per note.
 - Do not add proxy-pool, anti-detection, spam, resale, or automated publishing workflows.
 - Do not download media by default; store URLs unless the user explicitly asks and has rights to use the media.
 - Keep comment exports minimal and analysis-oriented. Do not use comments for outreach or user profiling.
@@ -215,4 +217,5 @@ If those variables are missing, reports fall back to deterministic local summari
 - Compliance boundaries: `references/compliance.md`
 - Manual cookie handling: `references/cookie-guide.md`
 - High-level workflow guide: `references/workflows.md`
-- Vendored PC/creator API inventory: `references/xhs-api-index.md`
+- Read-only API inventory: `references/xhs-api-index.md`
+- Vendored runtime provenance and integrity: `references/runtime-provenance.md`

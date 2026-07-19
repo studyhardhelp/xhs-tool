@@ -2,11 +2,49 @@
 
 Codex skill for authorized Xiaohongshu note research, normalization, and report generation.
 
+## Capabilities
+
+- Collect one note, keyword samples, or notes from one authorized user profile.
+- Run travel, product-review, content-ideation, comment-insight, viral-pattern, and general research workflows.
+- Normalize notes and comments, rank evidence, and export private JSON, Markdown, and spreadsheet files.
+- Keep media as a URL index. The project does not download media or publish content.
+
+## Quick Start
+
+```bash
+bash scripts/bootstrap_env.sh
+.venv/bin/python scripts/xhs_auth.py login --wait-auto
+.venv/bin/python scripts/xhs_auth.py status --json
+.venv/bin/python scripts/xhs_workflow.py --workflow auto --topic "your research topic"
+```
+
+Live collection is limited to 50 notes, 8 queries, 10 notes per query, and 100
+normalized comments per note. Defaults are smaller. A failed note or query is recorded
+and does not discard successful results.
+
+## Security And Data Retention
+
+- Cookies are read from `.secrets/xhs_cookie.txt` or `XHS_COOKIE`; secret-bearing API payloads use standard input, not process arguments.
+- The API wrapper exposes a read-only research allowlist. Creator publishing and no-watermark methods are blocked.
+- Run directories use mode `0700`; reports, tables, checkpoints, and sanitized raw files use mode `0600` where supported.
+- Raw responses redact cookies, request headers, sessions, and access tokens before storage.
+- Preview raw files older than 30 days with `python scripts/manage_runs.py --older-than-days 30`; add `--execute` to remove only those raw files.
+
+## Verification
+
+```bash
+python -m unittest discover -s tests -v
+python scripts/verify_runtime.py
+```
+
 ## Python Compatibility
 
 The command-line tools support Python 3.9 through current Python 3 releases. Python
 3.0-3.8 are not supported because current browser, spreadsheet, and HTTP dependencies
 no longer install reliably on those end-of-life versions.
+
+The live API runtime also requires Node.js 18+ and npm. `bootstrap_env.sh` checks both
+before creating the environment.
 
 Create the local environment with any Python 3.9+ interpreter:
 

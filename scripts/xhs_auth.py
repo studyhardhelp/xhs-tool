@@ -13,12 +13,13 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from collect_notes import resolve_tool, validate_cookie
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 COOKIE_PATH = PROJECT_ROOT / ".secrets" / "xhs_cookie.txt"
 STATE_PATH = PROJECT_ROOT / ".secrets" / "xhs_auth_state.json"
 AUTH_META_PATH = PROJECT_ROOT / ".secrets" / "xhs_auth_meta.json"
-TOOL_PATH = Path(__file__).resolve().parent / "xhs_api_tool.py"
 REQUIRED_COOKIE_NAMES = ["a1", "web_session", "webId", "websectiga", "gid"]
 COMMON_CHROME_EXECUTABLES = {
     "Darwin": [
@@ -132,8 +133,8 @@ def auth_status_from_cookie(cookie_header: str, source: str = "") -> dict:
     has_identity = "a1" in names and ("webId" in names or "gid" in names)
     usable = has_session and has_identity
     if usable:
-        status = "valid"
-        message = "Local XHS auth is usable."
+        status = "present"
+        message = "Local XHS auth has the required cookie names and needs a live API check."
     elif names:
         status = "partial"
         message = "Local XHS auth exists but may need refresh."
@@ -142,7 +143,9 @@ def auth_status_from_cookie(cookie_header: str, source: str = "") -> dict:
         message = "No local XHS auth found."
     return {
         "status": status,
-        "usable": usable,
+        "usable": False,
+        "structural_usable": usable,
+        "verified": False,
         "message": message,
         "source": source,
         "found": found,
@@ -234,7 +237,7 @@ def build_launch_candidates(args: argparse.Namespace) -> list[dict]:
 
 def install_playwright_chromium() -> tuple[bool, str]:
     command = [sys.executable, "-m", "playwright", "install", "chromium"]
-    completed = subprocess.run(command, text=True, capture_output=True, check=False)
+    completed = subprocess.run(command, text=True, capture_output=True, check=False, timeout=600)
     output = (completed.stdout + "\n" + completed.stderr).strip()
     return completed.returncode == 0, output
 
@@ -291,7 +294,7 @@ def wait_for_login_completion(page, context, timeout_seconds: int, poll_seconds:
             last_url = current_url
         cookie_header = cookie_header_from_browser_cookies(context.cookies())
         status = auth_status_from_cookie(cookie_header, "browser")
-        if status["usable"]:
+        if status["structural_usable"]:
             return cookie_header
         time.sleep(poll_seconds)
     raise SystemExit(f"Login wait timed out after {timeout_seconds} seconds. Please retry login.")
@@ -323,10 +326,14 @@ def login(args: argparse.Namespace) -> None:
             input()
             cookie_header = cookie_header_from_browser_cookies(context.cookies())
         context.storage_state(path=str(STATE_PATH))
+        try:
+            STATE_PATH.chmod(stat.S_IRUSR | stat.S_IWUSR)
+        except OSError:
+            pass
         browser.close()
 
     status_payload = auth_status_from_cookie(cookie_header, f"<skill-dir>/{skill_relative(COOKIE_PATH)}")
-    if not status_payload["usable"]:
+    if not status_payload["structural_usable"]:
         raise SystemExit("No usable Xiaohongshu cookies found. Make sure login completed in the opened browser.")
     save_cookie(cookie_header)
     save_auth_meta(status_payload, {"last_login_at": now_iso(), "browser_storage_state": skill_relative(STATE_PATH)})
@@ -346,6 +353,22 @@ def status(args: argparse.Namespace) -> None:
         return
     source = f"<skill-dir>/{skill_relative(COOKIE_PATH)}" if COOKIE_PATH.exists() else "XHS_COOKIE"
     payload = auth_status_from_cookie(cookie, source)
+    if payload["structural_usable"] and not args.offline:
+        valid, message = validate_cookie(resolve_tool(None), cookie)
+        payload["usable"] = valid
+        technical_failure = any(marker in message.lower() for marker in ("timed out", "runtime", "dependency", "not found"))
+        payload["verified"] = not technical_failure
+        payload["status"] = "valid" if valid else "unverified" if technical_failure else "invalid"
+        if valid:
+            payload["message"] = "Local XHS auth passed the live API check."
+        elif technical_failure:
+            payload["message"] = f"Local XHS auth could not be verified because the API runtime failed: {message}"
+        else:
+            payload["message"] = f"Local XHS auth failed the live API check: {message}"
+        save_auth_meta(payload, {"last_check": {"success": valid, "msg": message, "checked_at": now_iso()}})
+    elif payload["structural_usable"]:
+        payload["status"] = "present"
+        payload["message"] = "Local XHS auth has the required cookie names but was not verified online."
     meta = load_auth_meta()
     if meta:
         payload["saved_at"] = meta.get("saved_at")
@@ -373,27 +396,16 @@ def check(_: argparse.Namespace) -> None:
     cookie = load_cookie()
     if not cookie:
         raise SystemExit("No cookie found. Run xhs_auth.py login first.")
-    command = [
-        sys.executable,
-        str(TOOL_PATH),
-        "call",
-        "pc",
-        "get_user_self_info2",
-        "--params",
-        json.dumps({"cookies_str": cookie}, ensure_ascii=False),
-    ]
-    completed = subprocess.run(command, text=True, capture_output=True, check=False)
-    if completed.returncode != 0:
-        raise SystemExit(completed.stderr.strip() or completed.stdout.strip())
-    payload = json.loads(completed.stdout)
-    result = payload.get("result")
+    success, message = validate_cookie(resolve_tool(None), cookie)
     cookie_status = auth_status_from_cookie(cookie, f"<skill-dir>/{skill_relative(COOKIE_PATH)}" if COOKIE_PATH.exists() else "XHS_COOKIE")
-    if isinstance(result, list) and len(result) >= 2:
-        check_payload = {"success": result[0], "msg": result[1], "auth": cookie_status, "checked_at": now_iso()}
-        save_auth_meta(cookie_status, {"last_check": check_payload})
-        print(json.dumps({"success": result[0], "msg": result[1], "checked_at": check_payload["checked_at"]}, ensure_ascii=False, indent=2))
-    else:
-        print(completed.stdout)
+    cookie_status["verified"] = True
+    cookie_status["usable"] = success
+    cookie_status["status"] = "valid" if success else "invalid"
+    check_payload = {"success": success, "msg": message, "auth": cookie_status, "checked_at": now_iso()}
+    save_auth_meta(cookie_status, {"last_check": check_payload})
+    print(json.dumps({"success": success, "msg": message, "checked_at": check_payload["checked_at"]}, ensure_ascii=False, indent=2))
+    if not success:
+        raise SystemExit(1)
 
 
 def main() -> None:
@@ -414,6 +426,7 @@ def main() -> None:
     status_parser = subparsers.add_parser("status", help="Show whether local XHS auth exists.")
     status_parser.add_argument("--show-redacted", action="store_true", help="Print redacted cookie values for debugging.")
     status_parser.add_argument("--json", action="store_true", help="Print machine-readable auth status without cookie values.")
+    status_parser.add_argument("--offline", action="store_true", help="Only inspect cookie names without calling the live API.")
     status_parser.set_defaults(func=status)
 
     check_parser = subparsers.add_parser("check", help="Check whether the stored cookie can call self-info API.")

@@ -15,6 +15,17 @@ else
   exit 1
 fi
 
+if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+  echo "Node.js 18+ and npm are required for the XHS request-signing runtime." >&2
+  exit 1
+fi
+
+NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
+if [[ "${NODE_MAJOR}" -lt 18 ]]; then
+  echo "Node.js 18+ is required. Found: $(node --version)" >&2
+  exit 1
+fi
+
 "${PY}" - <<'PY'
 import sys
 if sys.version_info < (3, 9):
@@ -26,7 +37,7 @@ cd "${SKILL_DIR}"
 "${PY}" -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/pip install -r scripts/requirements-pc.txt
-npm install --prefix scripts
+npm ci --prefix scripts --ignore-scripts --no-audit --no-fund
 
 echo "xhs-report environment is ready."
 echo "Next: .venv/bin/python scripts/xhs_auth.py login --verbose --wait-auto"

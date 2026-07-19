@@ -1,5 +1,6 @@
-openpyxl>=3.1.0
-PyExecJS
-requests
-loguru
-playwright
+openpyxl==3.1.5
+PyExecJS==1.5.1
+requests==2.32.5
+loguru==0.7.3
+playwright==1.60.0
+jieba==0.42.1

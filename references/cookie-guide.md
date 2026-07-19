@@ -27,7 +27,7 @@ To disable automatic browser installation:
 ```
 
 The helper opens a visible browser, waits for the user to log in, extracts only Xiaohongshu cookies, and stores them in `<skill-dir>/.secrets/xhs_cookie.txt`.
-It also writes non-secret metadata to `<skill-dir>/.secrets/xhs_auth_meta.json`, including saved time, key-cookie presence, and latest check status.
+It also writes non-secret metadata to `<skill-dir>/.secrets/xhs_auth_meta.json`, including saved time, key-cookie presence, and latest live API check status.
 By default, `login` and `status` do not print cookie values. Use `--show-redacted` only for local debugging when the user explicitly asks.
 
 When guiding a non-technical user in Codex, do not ask them to copy cookies manually. Say:
@@ -36,7 +36,7 @@ When guiding a non-technical user in Codex, do not ask them to copy cookies manu
 请在弹出的小红书页面完成登录, 登录成功后我会自动继续采集。
 ```
 
-Recommended manual flow:
+Manual fallback:
 
 1. Open Xiaohongshu Web and sign in.
 2. Open browser DevTools.
@@ -44,12 +44,13 @@ Recommended manual flow:
 4. Choose a real `GET` or `POST` request under `edith.xiaohongshu.com`.
 5. Ignore `OPTIONS` preflight requests.
 6. Copy the `cookie` request header value.
-7. Store it locally as `XHS_COOKIE`.
+7. Store it locally as `XHS_COOKIE` without placing it in shell history.
 
 Example:
 
 ```bash
-export XHS_COOKIE='a1=...; web_session=...; webId=...; websectiga=...; gid=...'
+read -s XHS_COOKIE
+export XHS_COOKIE
 ```
 
 Do not paste cookies into source files, commit history, shared logs, or generated reports.

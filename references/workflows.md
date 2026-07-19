@@ -16,6 +16,13 @@ Use `scripts/xhs_workflow.py --workflow auto` unless the user or operator explic
 
 ## Workflow Menu
 
+### general-research
+
+Use as the automatic fallback when a topic does not clearly match a specialized
+workflow. Outputs should emphasize sampled high-value notes, repeated terms, evidence
+links, open questions, and what should be collected next. Do not silently classify an
+unknown topic as a viral-pattern request.
+
 ### travel-plan
 
 Use for itinerary and destination research.

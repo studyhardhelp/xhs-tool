@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 
 from xhs_report_lib import flatten_note_comments, load_normalized, write_comments_table, write_json, write_markdown_report, write_table, summarize_notes
+from xhs_security import ensure_private_dir
 
 
 def main() -> None:
@@ -14,7 +15,7 @@ def main() -> None:
 
     notes = load_normalized(args.input)
     out_dir = Path(args.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    ensure_private_dir(out_dir)
 
     normalized_path = out_dir / "notes.normalized.json"
     summary_path = out_dir / "summary.json"
