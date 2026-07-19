@@ -10,16 +10,17 @@ bash scripts/bootstrap_env.sh
 .venv/bin/python scripts/xhs_auth.py status --json
 ```
 
-The helper tries installed Chrome, Edge, Chrome for Testing, common browser executable paths, then Playwright bundled Chromium.
-If no controllable browser is found, it automatically installs Playwright Chromium and retries.
-If Chrome is installed but auto-detection fails:
+The helper uses only Playwright bundled Chromium by default, so the user does not need Chrome or Edge installed.
+If bundled Chromium is missing, it automatically installs Playwright Chromium and retries.
+Installed Chrome/Edge should be used only for debugging:
 
 ```bash
+.venv/bin/python scripts/xhs_auth.py login --browser-mode auto --wait-auto
 .venv/bin/python scripts/xhs_auth.py login --channel chrome --wait-auto
 .venv/bin/python scripts/xhs_auth.py login --executable-path "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --wait-auto
 ```
 
-The system default browser can be used only for manual login/cookie-copy fallback; automatic auth export requires a Playwright-controlled Chromium browser.
+The system default browser should not be used for normal skill auth because automatic auth export requires a Playwright-controlled Chromium browser.
 To disable automatic browser installation:
 
 ```bash
