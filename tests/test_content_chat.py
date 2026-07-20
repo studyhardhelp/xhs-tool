@@ -82,7 +82,32 @@ class ContentChatTests(unittest.TestCase):
             self.assertEqual([page["page_number"] for page in draft["carousel_pages"]], list(range(1, 7)))
             self.assertTrue(all("3:4" in page["image_prompt"] for page in draft["carousel_pages"]))
             self.assertEqual(draft["visual_direction"]["primary_style"], "自然纪实、清晰编辑感")
+            self.assertIn("visual_master", draft)
+            self.assertIn("safe_margins", draft["visual_master"])
+            self.assertIn("brief_analysis", draft)
+            self.assertIn("style_report", draft["brief_analysis"])
             self.assertIn("## 多页图文规划", xhs_content_chat.render_draft_markdown(draft))
+
+    def test_page_count_topics_and_assets_are_parsed(self):
+        with tempfile.TemporaryDirectory() as directory, self.token_env(False):
+            session, draft, _ = xhs_content_chat.create_session(
+                "做成 4 页小红书图片",
+                Path(directory),
+                topics="#露营, 装备清单，#新手",
+                images="cover.png, https://example.com/a.jpg",
+                reference_assets="ref1.png\nref2.png",
+            )
+            self.assertEqual(session["page_count"], 4)
+            self.assertEqual(session["topics"], ["露营", "装备清单", "新手"])
+            self.assertEqual(len(session["assets"]["images"]), 2)
+            self.assertEqual(len(session["assets"]["reference_assets"]), 2)
+            self.assertEqual(len(draft["carousel_pages"]), 4)
+            self.assertEqual(session["task_status"], xhs_content_chat.ContentTaskStatus.AWAITING_CONFIRMATION.value)
+            self.assertTrue(any(task["task_id"] == "confirm-image" for task in draft["production_tasks"]))
+
+    def test_asset_input_rejects_credentials(self):
+        with self.assertRaises(ValueError):
+            xhs_content_chat.parse_asset_inputs(images="cover.png, Cookie=secret")
 
     def test_follow_up_can_turn_copy_draft_into_carousel(self):
         with tempfile.TemporaryDirectory() as directory, self.token_env(False):

@@ -29,7 +29,7 @@ For broad user requests, prefer `scripts/xhs_workflow.py --workflow auto` over m
 - Conversational content creation: `scripts/xhs_content_chat.py`
   Use for requests like “帮我写一篇露营装备清单”“标题更有冲突感”“语气克制一点”. Keep the same session for follow-up edits.
 - Visual content direction: `scripts/xhs_content_chat.py --pages N`
-  Use for covers, 3:4 carousels, page-by-page visual plans, style selection, image prompts, or layout review. Do not force a carousel onto copy-only requests.
+  Use for covers, 3:4 carousels, page-by-page visual plans, style selection, image prompts, rendered-image preparation, or layout review. Do not force a carousel onto copy-only requests.
 
 Default workflow outputs:
 
@@ -97,11 +97,11 @@ Sessions are stored privately under `runs/content-chat/<session-id>/` as `sessio
 
 Read `references/visual-content.md` for cover, carousel, visual-style, image-prompt, or layout-review requests. Match the visual system to the content rather than defaulting to dark technology aesthetics.
 
-When the request is sufficiently specific, proceed with explicit assumptions. When audience, objective, core claim, available assets, and desired action leave materially different visual directions, ask one grouped clarification instead of forcing a fixed questionnaire.
+When the request is sufficiently specific, proceed with explicit assumptions. When audience, objective, core claim, available assets, and desired action leave materially different visual directions, ask one grouped clarification instead of forcing a fixed questionnaire. For full carousel or image-file requests, act as a visual director: produce a brief analysis, style judgment, visual master, page rhythm, and task-state list before any image generation.
 
 For multi-page requests, create a unified visual direction and page-by-page plan. Lock a 1080x1440px 3:4 canvas, safe margins, color and typography tokens, component language, and page numbering across the series. Give each page one primary communication task and vary only its main visual and information structure.
 
-Use an available image-generation capability only when the user explicitly asks for image files. Generate one representative cover or key page first and request style confirmation before batch generation, unless the user explicitly asks to skip confirmation. Never claim an image was generated unless a real file or returned asset exists. Do not publish the result.
+Use an available image-generation capability only when the user explicitly asks for image files. Generate one representative cover or key page first and request style confirmation before batch generation, unless the user explicitly asks to skip confirmation. Track this as `production_tasks`: `plan` completed, `confirm-image` awaiting confirmation, and `batch-images` ready only after approval. Never claim an image was generated unless a real file or returned asset exists. Do not publish the result.
 
 Create a persistent six-page visual draft when needed:
 
@@ -111,6 +111,18 @@ Create a persistent six-page visual draft when needed:
   --pages 6 \
   --visual-style "自然纪实、清晰编辑感"
 ```
+
+The content-chat CLI also accepts loose inputs inspired by MCP-style tool parameters while keeping this skill non-publishing:
+
+```bash
+.venv/bin/python scripts/xhs_content_chat.py start \
+  --brief "把露营装备清单做成 6 页小红书图片" \
+  --topics "露营,装备清单,新手" \
+  --images "cover.png,detail.png" \
+  --reference-assets "ref-style.png"
+```
+
+Inputs are parsed into private session fields (`topics`, `assets`) and draft fields (`brief_analysis`, `visual_master`, `production_tasks`). They are for planning and image-preparation only; the skill must not upload or publish.
 
 ## Auth UX And Secret Handling
 

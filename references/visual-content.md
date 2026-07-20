@@ -17,6 +17,12 @@ Use information already present in the conversation. Check these decisions befor
 
 If missing information would produce materially different results, ask one grouped clarification. Otherwise state assumptions and continue. Do not force a fixed ten-question interview.
 
+For full carousel or rendered-image requests, behave like a visual director:
+
+- First produce or preserve a brief analysis: objective, audience, core claim, reader emotion, content density, style report, unsuitable style, and the few clarifying questions that materially affect the result.
+- Ask a compact grouped clarification only when the missing answers would produce a different visual system. Do not mechanically ask ten questions when the user has already provided enough context.
+- If the user explicitly says to proceed directly, state assumptions and continue.
+
 ## Style Selection
 
 Choose style after classifying the content and information density. Useful starting families include:
@@ -44,6 +50,8 @@ For a multi-page series, define one reusable master before page details:
 
 Repeat the canvas and master constraints in every image prompt. Keep every page readable on a phone and assign it one primary communication task.
 
+The persistent draft should include a `visual_master` object with canvas, safe margins, grid, palette, typography, components, consistent rules, and variable rules. Every page prompt should repeat the 3:4 canvas, safe margins, unified style, Chinese text-safe area, and mobile readability requirement.
+
 ## Page Rhythm
 
 Build only the number of pages the content can support. A typical series may move through cover, problem, context, key idea, method, example, summary, and interaction, but do not mechanically fill eight pages. Use contrast between pages while preserving the visual master.
@@ -61,6 +69,14 @@ When the user explicitly requests rendered images:
 5. After confirmation, generate the remaining series with the locked master.
 
 If the image model cannot render reliable Chinese, generate an appropriate text-safe visual base and add real Chinese with a deterministic layout tool. Do not deliver gibberish, black placeholder bars, or unreadable generated text as a finished image.
+
+Track image-production status explicitly. A planning draft may contain `production_tasks` such as:
+
+- `plan`: completed after the draft, visual direction, master, and page plan exist.
+- `confirm-image`: awaiting_confirmation before generating the first cover or key-page image.
+- `batch-images`: ready_for_image_generation only after the representative image is approved.
+
+These task records are planning state only. They must not trigger login, upload, publish, or platform automation.
 
 ## Review
 
