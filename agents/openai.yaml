@@ -1,4 +1,4 @@
 interface:
   display_name: "XHS Tool"
-  short_description: "Research XHS and create copy plus visual plans."
-  default_prompt: "Use $xhs-tool to research an authorized Xiaohongshu topic or conversationally create and refine human-reviewed copy and visual direction."
+  short_description: "Write 小红书 notes, travel攻略, copy, and visual plans."
+  default_prompt: "Use $xhs-tool to write or revise a 小红书笔记, travel攻略, 自驾游攻略, title, cover copy, hashtags, carousel plan, or to research an authorized Xiaohongshu topic."
