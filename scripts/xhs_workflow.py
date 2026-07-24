@@ -74,6 +74,24 @@ WORKFLOWS = {
         "triggers": ["爆款", "热门", "最火", "高赞", "趋势", "话题", "榜单", "共性", "拆解"],
         "default_comments": True,
     },
+    "deep-research": {
+        "label": "深度调研",
+        "suffixes": ["需求", "痛点", "趋势", "竞品", "避坑", "口碑", "评论", "对比"],
+        "triggers": ["深度调研", "深入调研", "系统调研", "用户需求", "市场调研", "竞品调研", "痛点分析", "机会分析"],
+        "default_comments": True,
+    },
+    "topic-bank": {
+        "label": "选题库",
+        "suffixes": ["选题", "标题", "爆款", "新手", "避坑", "清单", "教程", "合集"],
+        "triggers": ["选题库", "选题池", "30个选题", "三十个选题", "内容日历", "发布计划", "选题规划", "账号选题"],
+        "default_comments": True,
+    },
+    "viral-reverse": {
+        "label": "爆款逆向复盘",
+        "suffixes": ["爆款拆解", "高赞", "封面", "标题", "评论", "收藏", "模板", "复盘"],
+        "triggers": ["逆向", "复盘", "为什么火", "爆款复盘", "爆款逆向", "复刻", "拆解这几篇", "共同模式"],
+        "default_comments": True,
+    },
 }
 
 
@@ -85,6 +103,12 @@ def expand_queries(workflow: str, topic: str, max_queries: int) -> list[str]:
     topic = " ".join(topic.split())
     suffixes = WORKFLOWS[workflow]["suffixes"]
     queries = [topic]
+    if workflow == "deep-research":
+        queries.extend(expand_deep_research_queries(topic))
+    elif workflow == "topic-bank":
+        queries.extend(expand_topic_bank_queries(topic))
+    elif workflow == "viral-reverse":
+        queries.extend(expand_viral_reverse_queries(topic))
     queries.extend(f"{topic} {suffix}" for suffix in suffixes if suffix not in topic)
     deduped = []
     seen = set()
@@ -95,14 +119,48 @@ def expand_queries(workflow: str, topic: str, max_queries: int) -> list[str]:
     return deduped[:max_queries]
 
 
+def expand_deep_research_queries(topic: str) -> list[str]:
+    return [
+        f"{topic} 用户需求",
+        f"{topic} 痛点",
+        f"{topic} 避雷",
+        f"{topic} 真实体验",
+        f"{topic} 对比",
+        f"{topic} 评论",
+    ]
+
+
+def expand_topic_bank_queries(topic: str) -> list[str]:
+    return [
+        f"{topic} 爆款选题",
+        f"{topic} 新手攻略",
+        f"{topic} 避坑清单",
+        f"{topic} 干货教程",
+        f"{topic} 评论区问题",
+        f"{topic} 标题",
+    ]
+
+
+def expand_viral_reverse_queries(topic: str) -> list[str]:
+    return [
+        f"{topic} 爆款",
+        f"{topic} 高赞",
+        f"{topic} 封面",
+        f"{topic} 评论",
+        f"{topic} 收藏",
+        f"{topic} 为什么火",
+    ]
+
+
 def infer_workflow(topic: str) -> str:
     text = topic.lower()
+    priority_workflows = {"deep-research", "topic-bank", "viral-reverse"}
     scores = {}
     for workflow, config in WORKFLOWS.items():
         score = 0
         for trigger in config.get("triggers", []):
             if str(trigger).lower() in text:
-                score += 1
+                score += 3 if workflow in priority_workflows else 1
         scores[workflow] = score
     best_workflow, best_score = max(scores.items(), key=lambda item: item[1])
     return best_workflow if best_score > 0 else "general-research"
@@ -330,6 +388,9 @@ def next_actions(workflow: str) -> list[str]:
         "content-ideation": ["生成 20 个选题、标题和首段开头"],
         "comment-insight": ["把评论问题转成客服话术、FAQ 或内容答疑清单"],
         "viral-pattern": ["拆解标题结构、标签结构和可复用爆款模板"],
+        "deep-research": ["把报告升级为决策备忘录：需求、痛点、机会、风险、下一步采样计划"],
+        "topic-bank": ["把选题库整理成 7/14/30 天发布日历，并挑 3 个进入内容生产"],
+        "viral-reverse": ["把高互动结构转成原创选题模板、封面脚本和评论引导清单"],
         "general-research": ["根据高价值样本整理主题结论、反例和待验证问题"],
     }
     return workflow_actions.get(workflow, []) + common
@@ -414,6 +475,122 @@ def title_pattern_counts(notes: list[dict]) -> list[tuple[str, int]]:
     return sorted(counts, key=lambda item: item[1], reverse=True)
 
 
+def note_relevance_score(note: dict, topic: str, terms: list[tuple[str, int]] | None = None) -> int:
+    text = f"{note.get('title', '')} {note.get('desc', '')} {' '.join(map(str, ensure_list(note.get('tags'))))}".lower()
+    topic_tokens = tokenize_chinese_and_ascii(topic)
+    if not topic_tokens:
+        topic_tokens = [topic.lower()]
+    term_tokens = [term for term, _ in (terms or [])[:12]]
+    score = 0
+    for token in topic_tokens:
+        if token and token.lower() in text:
+            score += 10
+    for token in term_tokens:
+        if token and token.lower() in text:
+            score += 3
+    return min(100, score)
+
+
+def research_score(note: dict, topic: str, terms: list[tuple[str, int]]) -> int:
+    relevance = note_relevance_score(note, topic, terms)
+    engagement = min(100, interaction_score(note) // 10)
+    recency = 0
+    if parse_publish_datetime_local(note.get("publish_time")):
+        recency = 60
+    return round(relevance * 0.4 + recency * 0.25 + engagement * 0.35)
+
+
+def parse_publish_datetime_local(value: object) -> bool:
+    try:
+        from xhs_report_lib import parse_publish_datetime
+
+        return parse_publish_datetime(value) is not None
+    except Exception:
+        return False
+
+
+def group_snippets(notes: list[dict], comments: list[dict], groups: dict[str, tuple[str, ...]], limit: int = 4) -> dict[str, list[dict]]:
+    return {label: evidence_snippets(notes, comments, keywords, limit=limit) for label, keywords in groups.items()}
+
+
+def build_topic_bank_rows(topic: str, notes: list[dict], comments: list[dict], terms: list[tuple[str, int]], limit: int = 30) -> list[dict]:
+    seed_terms = [word for word, _ in terms if len(word) >= 2]
+    seed_titles = [str(note.get("title") or "").strip() for note in sorted(notes, key=interaction_score, reverse=True) if note.get("title")]
+    comment_questions = question_candidates(comments, limit=10)
+    seeds = []
+    for value in [*seed_terms, *seed_titles, *comment_questions, "新手避坑", "真实体验", "清单合集", "评论答疑"]:
+        value = re.sub(r"\s+", " ", str(value)).strip()
+        if value and value not in seeds:
+            seeds.append(value)
+        if len(seeds) >= 10:
+            break
+    formats = [
+        ("避坑清单", "收藏", "适合做图文"),
+        ("新手攻略", "收藏", "适合做图文"),
+        ("真实体验", "评论", "适合做图文/视频"),
+        ("对比测评", "决策", "适合做图文"),
+        ("评论答疑", "互动", "适合做图文"),
+        ("路线/步骤", "收藏", "适合做轮播"),
+    ]
+    rows = []
+    for seed in seeds:
+        for format_name, objective, format_hint in formats:
+            angle = seed[:28]
+            rows.append(
+                {
+                    "title": f"{topic}｜{angle}：{format_name}",
+                    "angle": angle,
+                    "audience": "对该主题有明确需求、正在搜索经验的人群",
+                    "format": format_hint,
+                    "cover_hook": f"把“{angle}”做成一眼能收藏的反差/清单封面",
+                    "tags": [topic[:12], format_name, "小红书经验"],
+                    "objective": objective,
+                    "difficulty": "中" if format_name in {"对比测评", "路线/步骤"} else "低",
+                }
+            )
+            if len(rows) >= limit:
+                return rows
+    return rows
+
+
+def viral_template_rows(notes: list[dict], comments: list[dict], terms: list[tuple[str, int]]) -> list[dict]:
+    patterns = title_pattern_counts(notes)
+    top_terms = [term for term, _ in terms[:8]]
+    question_examples = question_candidates(comments, limit=4)
+    rows = []
+    pattern_labels = [label for label, _ in patterns] or ["避坑", "攻略/教程", "清单/合集", "疑问标题"]
+    for label in pattern_labels[:6]:
+        if label == "避坑":
+            formula = "别再___了：我踩过的___个坑"
+            cover = "强反差标题 + 一个明确避坑对象 + 少量红色警示元素"
+        elif label == "攻略/教程":
+            formula = "新手第一次___，照着这份清单做"
+            cover = "清单感封面 + 明确对象 + 步骤编号"
+        elif label == "清单/合集":
+            formula = "___必备清单：这___个我会一直留着"
+            cover = "多物品/多模块网格 + 收藏提示"
+        elif label == "对比/测评":
+            formula = "___和___怎么选？真实体验后我留下___"
+            cover = "左右对比 + 结论前置"
+        elif label == "疑问标题":
+            formula = "为什么大家都在问___？我整理了真实答案"
+            cover = "大问号/评论截图感 + 答案承诺"
+        else:
+            formula = "关于___，评论区问最多的是___"
+            cover = "评论问题卡 + 一句话回答"
+        rows.append(
+            {
+                "pattern": label,
+                "title_formula": formula,
+                "cover_hook": cover,
+                "body_rhythm": "冲突/问题开场 -> 3-5 个证据点 -> 适用/不适用人群 -> 评论引导",
+                "comment_trigger": question_examples[0] if question_examples else "你最想看哪一类真实体验？",
+                "tags": top_terms[:5],
+            }
+        )
+    return rows
+
+
 def build_workflow_report(workflow: str, topic: str, queries: list[str], notes: list[dict], comments: list[dict]) -> str:
     summary = summarize_notes(notes)
     comment_summary = summarize_comments(comments)
@@ -454,6 +631,12 @@ def build_workflow_report(workflow: str, topic: str, queries: list[str], notes: 
         lines.extend(build_comment_section(topic, comments))
     elif workflow == "viral-pattern":
         lines.extend(build_viral_section(topic, notes, comments, terms))
+    elif workflow == "deep-research":
+        lines.extend(build_deep_research_section(topic, notes, comments, terms))
+    elif workflow == "topic-bank":
+        lines.extend(build_topic_bank_section(topic, notes, comments, terms))
+    elif workflow == "viral-reverse":
+        lines.extend(build_viral_reverse_section(topic, notes, comments, terms))
     elif workflow == "general-research":
         lines.extend(build_general_section(topic, notes, comments, terms))
     lines.extend(build_common_appendix(workflow, notes, comments))
@@ -607,6 +790,145 @@ def build_ideation_section(topic: str, notes: list[dict], comments: list[dict], 
         "- 评论答疑型：把评论高频问题整理成 FAQ。",
         "",
     ]
+
+
+def build_deep_research_section(topic: str, notes: list[dict], comments: list[dict], terms: list[tuple[str, int]]) -> list[str]:
+    groups = group_snippets(
+        notes,
+        comments,
+        {
+            "需求信号": ("想要", "需要", "适合", "推荐", "怎么选", "有没有", "求"),
+            "痛点/阻碍": ("避雷", "踩雷", "后悔", "麻烦", "贵", "不值", "失败", "问题"),
+            "决策因素": ("价格", "预算", "方便", "效果", "体验", "对比", "值得", "性价比"),
+            "机会线索": ("没人说", "冷门", "小众", "新手", "清单", "教程", "保姆级"),
+            "风险/反例": ("不推荐", "不适合", "翻车", "过敏", "排队", "售后", "风控"),
+        },
+        limit=5,
+    )
+    ranked = sorted(notes, key=lambda note: research_score(note, topic, terms), reverse=True)[:12]
+    lines = [
+        "## 深度调研结论框架",
+        "",
+        "- 本工作流按“相关性 40% + 可识别时效 25% + 互动强度 35%”对样本做内部排序。",
+        "- 结论只代表本次采样，不代表平台官方趋势；高风险决策建议补充二次采样。",
+        "",
+        "## 调研样本评分",
+        "",
+        "| Rank | Title | Research Score | Interaction | Likes | Collects | Comments | URL |",
+        "|---:|---|---:|---:|---:|---:|---:|---|",
+    ]
+    for index, note in enumerate(ranked, 1):
+        title = str(note.get("title") or "Untitled").replace("|", " ")[:80]
+        lines.append(
+            f"| {index} | {title} | {research_score(note, topic, terms)} | {interaction_score(note)} | "
+            f"{as_int(note.get('liked_count'))} | {as_int(note.get('collected_count'))} | "
+            f"{as_int(note.get('comment_count'))} | {note.get('url', '')} |"
+        )
+    for label, items in groups.items():
+        lines.extend(["", f"## {label}", ""])
+        lines.extend(evidence_lines(items, f"当前样本没有提取到明确的{label}。"))
+    lines.extend(
+        [
+            "",
+            "## 可执行建议",
+            "",
+            "- 把高频需求词转成 3-5 个细分搜索词，继续补采样验证。",
+            "- 优先阅读 Research Score 前 5 的笔记，确认语境和反例。",
+            "- 如果用于产品/内容决策，把评论疑问转成 FAQ、选题和用户访谈提纲。",
+            "",
+        ]
+    )
+    return lines
+
+
+def build_topic_bank_section(topic: str, notes: list[dict], comments: list[dict], terms: list[tuple[str, int]]) -> list[str]:
+    rows = build_topic_bank_rows(topic, notes, comments, terms, limit=30)
+    lines = [
+        "## 选题库",
+        "",
+        "| # | 选题 | 内容角度 | 目标人群 | 形式 | 封面钩子 | 目标 | 难度 |",
+        "|---:|---|---|---|---|---|---|---|",
+    ]
+    for index, row in enumerate(rows, 1):
+        lines.append(
+            f"| {index} | {row['title'].replace('|', ' ')} | {row['angle'].replace('|', ' ')} | "
+            f"{row['audience']} | {row['format']} | {row['cover_hook'].replace('|', ' ')} | "
+            f"{row['objective']} | {row['difficulty']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## 选题使用建议",
+            "",
+            "- 先挑 3 个“低难度 + 收藏目标”的选题进入内容生产。",
+            "- 每个选题发布前回到来源笔记确认事实和语境，避免照搬表达。",
+            "- 适合继续接 `scripts/xhs_content_chat.py` 生成标题、正文、封面文案和多页图文方案。",
+            "",
+        ]
+    )
+    return lines
+
+
+def build_viral_reverse_section(topic: str, notes: list[dict], comments: list[dict], terms: list[tuple[str, int]]) -> list[str]:
+    templates = viral_template_rows(notes, comments, terms)
+    top_notes = sorted(notes, key=interaction_score, reverse=True)[:8]
+    lines = [
+        "## 爆款逆向复盘",
+        "",
+        "> 目标是提炼原创结构，不是复刻或搬运原笔记。所有模板都需要换成自己的事实、素材和表达。",
+        "",
+        "## 高互动样本",
+        "",
+        "| Rank | Title | Score | Likes | Collects | Comments | Reusable Cue | URL |",
+        "|---:|---|---:|---:|---:|---:|---|---|",
+    ]
+    for index, note in enumerate(top_notes, 1):
+        title = str(note.get("title") or "Untitled").replace("|", " ")[:80]
+        cue = infer_reusable_cue(title)
+        lines.append(
+            f"| {index} | {title} | {interaction_score(note)} | {as_int(note.get('liked_count'))} | "
+            f"{as_int(note.get('collected_count'))} | {as_int(note.get('comment_count'))} | {cue} | {note.get('url', '')} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## 可复用原创模板",
+            "",
+            "| 模式 | 标题公式 | 封面钩子 | 正文节奏 | 评论引导 | 标签线索 |",
+            "|---|---|---|---|---|---|",
+        ]
+    )
+    for row in templates:
+        lines.append(
+            f"| {row['pattern']} | {row['title_formula']} | {row['cover_hook']} | "
+            f"{row['body_rhythm']} | {str(row['comment_trigger']).replace('|', ' ')[:80]} | {', '.join(row['tags'])} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## 风险提醒",
+            "",
+            "- 不要复刻原笔记标题、封面和正文，只复用结构。",
+            "- 不要把样本中的个人体验当成自己的亲身经历。",
+            "- 如果要进入图文生产，先用一张封面/关键页确认视觉方向，再批量生成。",
+            "",
+        ]
+    )
+    return lines
+
+
+def infer_reusable_cue(title: str) -> str:
+    if any(marker in title for marker in ("避坑", "踩雷", "劝退")):
+        return "反向避坑"
+    if any(marker in title for marker in ("攻略", "教程", "保姆级")):
+        return "步骤承诺"
+    if any(marker in title for marker in ("清单", "合集", "必备")):
+        return "收藏清单"
+    if any(marker in title for marker in ("?", "？", "怎么", "吗")):
+        return "问题驱动"
+    if re.search(r"\d", title):
+        return "数字结构"
+    return "标题钩子待人工确认"
 
 
 def build_comment_section(topic: str, comments: list[dict]) -> list[str]:

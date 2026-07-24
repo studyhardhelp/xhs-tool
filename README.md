@@ -2,13 +2,29 @@
 
 Codex skill for authorized Xiaohongshu research, reporting, and conversational content drafting.
 
+Chinese documentation: [README.zh-CN.md](README.zh-CN.md)
+
 ## Capabilities
 
 - Collect one note, keyword samples, or notes from one authorized user profile.
-- Run travel, product-review, content-ideation, comment-insight, viral-pattern, and general research workflows.
+- Run general research, travel planning, product review, content ideation, comment insight, viral pattern analysis, deep research, topic bank, and viral reverse engineering workflows.
 - Normalize notes and comments, rank evidence, and export private JSON, Markdown, and spreadsheet files.
 - Create and refine titles, body copy, hashtags, cover copy, visual systems, and page-by-page carousel plans through AI conversation.
 - Keep media as a URL index. The project does not download media or publish content.
+
+## Workflow Menu
+
+| Workflow | Chinese Name | Use For |
+|---|---|---|
+| `general-research` | 主题研究 | Safe fallback for broad XHS topic research. |
+| `travel-plan` | 旅行攻略研究 | Itineraries, routes, accommodation areas, food, budget clues, and travel risks. |
+| `product-review` | 产品口碑研究 | Product reputation, reviews, alternatives, pros/cons, and purchase framing. |
+| `content-ideation` | 选题生成 | Content angles, title references, account operation ideas, and next-post inspiration. |
+| `comment-insight` | 评论洞察 | Repeated questions, objections, pain points, FAQ, and user vocabulary from comments. |
+| `viral-pattern` | 爆款拆解 | Common patterns in popular notes, titles, tags, hooks, and interaction structures. |
+| `deep-research` | 深度调研 | User needs, pain points, decision factors, opportunity clues, risks, and next sampling plans. |
+| `topic-bank` | 选题库 | Structured topic libraries and content calendars from sampled XHS evidence. |
+| `viral-reverse` | 爆款逆向复盘 | Reverse-engineering high-interaction notes into original reusable content templates. |
 
 ## Quick Start
 

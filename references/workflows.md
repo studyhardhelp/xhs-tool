@@ -59,6 +59,39 @@ Use for爆款拆解 and popularity pattern analysis.
 Important: frame conclusions as sample-based, not an official platform-wide ranking.
 Outputs should emphasize title formulas, cover/content hooks if inferable, tags, interaction structure, controversies, and repeatable templates.
 
+### deep-research
+
+Use for deep topic, market, product, user-need, pain-point, or opportunity research.
+
+Good inputs:
+
+- “深度调研小红书上露营装备避雷和用户需求”
+- “分析 AI 学习工具的小红书用户痛点和竞品机会”
+
+Outputs should emphasize expanded query angles, sampled evidence quality, ranked notes, user needs, pain points, decision factors, opportunity clues, risks, and next sampling recommendations. The internal ranking is a heuristic combining relevance, identifiable recency, and engagement; never present it as an official platform ranking.
+
+### topic-bank
+
+Use for generating a structured topic library or content calendar from sampled XHS evidence.
+
+Good inputs:
+
+- “基于小红书数据生成 30 个露营账号选题”
+- “给 AI 工具账号做一个选题库”
+
+Outputs should include topic title, angle, audience, format, cover hook, objective, difficulty, and follow-up recommendation. Treat source notes as inspiration, not text to copy. The next step should usually be `xhs_content_chat.py` for selected drafts.
+
+### viral-reverse
+
+Use for reverse-engineering why high-interaction notes work and converting patterns into original templates.
+
+Good inputs:
+
+- “复盘这些爆款为什么火”
+- “拆解小红书露营装备爆款共同模式”
+
+Outputs should emphasize high-interaction samples, reusable cues, title formulas, cover hooks, body rhythm, comment triggers, tag clues, and risk warnings. Do not reproduce source note titles, covers, or body copy closely.
+
 ## Output Quality
 
 The workflow summary includes `evidence_quality`:

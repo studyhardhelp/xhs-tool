@@ -31,6 +31,12 @@ Clean Chinese trigger examples:
   Use when the user wants评论高频问题、情绪、痛点、FAQ、需求洞察.
 - Viral pattern analysis: `--workflow viral-pattern`
   Use for爆款拆解、热门笔记共性、标题/标签/互动结构研究.
+- Deep research: `--workflow deep-research`
+  Use for深度调研、用户需求、痛点分析、竞品调研、机会/风险判断. It expands query angles and ranks notes by relevance, identifiable recency, and engagement.
+- Topic bank: `--workflow topic-bank`
+  Use for选题库、选题池、内容日历、账号长期选题规划. It turns sampled evidence into structured topics with audience, cover hook, format, objective, and difficulty.
+- Viral reverse engineering: `--workflow viral-reverse`
+  Use for爆款逆向复盘、为什么火、可复用原创模板、标题/封面/正文节奏拆解. It must extract structures, not copy notes.
 - General research: `--workflow general-research`
   Safe fallback for topics that do not match a specialized workflow.
 - Conversational content creation: `scripts/xhs_content_chat.py`
@@ -298,6 +304,28 @@ Force a specific workflow only when the user's intent is clear:
   --workflow product-review \
   --topic "某防晒产品真实测评 避雷 平替" \
   --max-notes 20
+```
+
+New expanded workflow examples:
+
+```bash
+.venv/bin/python scripts/xhs_workflow.py \
+  --workflow deep-research \
+  --topic "露营装备 用户需求 痛点" \
+  --max-notes 30 \
+  --include-comments
+
+.venv/bin/python scripts/xhs_workflow.py \
+  --workflow topic-bank \
+  --topic "AI 工具账号 选题库" \
+  --max-notes 25 \
+  --include-comments
+
+.venv/bin/python scripts/xhs_workflow.py \
+  --workflow viral-reverse \
+  --topic "露营装备 爆款复盘" \
+  --max-notes 25 \
+  --include-comments
 ```
 
 ## Token Platform
