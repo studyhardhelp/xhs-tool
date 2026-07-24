@@ -14,6 +14,7 @@ class PythonCompatibilityTests(unittest.TestCase):
         __import__("collect_notes")
         __import__("xhs_auth")
         __import__("xhs_content_chat")
+        __import__("xhs_doctor")
         __import__("xhs_report_lib")
         __import__("xhs_workflow")
 

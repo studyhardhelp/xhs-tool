@@ -396,6 +396,59 @@ def next_actions(workflow: str) -> list[str]:
     return workflow_actions.get(workflow, []) + common
 
 
+def follow_up_packages(workflow: str) -> list[dict]:
+    common = [
+        {
+            "name": "证据链接库",
+            "action": "把高价值笔记链接按推荐阅读理由、适用场景和风险标注整理成清单。",
+            "requires": "notes.normalized.json",
+        },
+        {
+            "name": "媒体索引复核",
+            "action": "检查 `media_index.json`，只筛选有授权用途的图片/视频候选。",
+            "requires": "media_index.json",
+        },
+    ]
+    packages = {
+        "travel-plan": [
+            {"name": "逐日行程包", "action": "把采样结论拆成逐日路线、住宿区域、餐饮、预算和避坑 checklist。", "requires": "workflow_report.md"},
+            {"name": "亲子/同行人约束包", "action": "围绕老人、儿童、情侣、朋友等场景重排路线和注意事项。", "requires": "workflow_report.md"},
+        ],
+        "product-review": [
+            {"name": "购买决策矩阵", "action": "整理适合买、谨慎买、不建议买、替代品和平替证据。", "requires": "workflow_report.md"},
+            {"name": "评论 FAQ 包", "action": "把评论区疑问转成购买前 FAQ 和客服/内容答疑素材。", "requires": "comments.normalized.json"},
+        ],
+        "content-ideation": [
+            {"name": "选题库升级", "action": "升级到 `topic-bank`，输出结构化选题、封面钩子、目标和难度。", "requires": "notes.normalized.json"},
+            {"name": "内容草稿包", "action": "挑 3 个选题接 `scripts/xhs_content_chat.py` 生成标题、正文、标签和封面文案。", "requires": "人工选择选题"},
+        ],
+        "comment-insight": [
+            {"name": "FAQ/答疑帖包", "action": "把高频评论问题转成 FAQ、答疑帖和客服话术。", "requires": "comments.normalized.json"},
+            {"name": "需求洞察包", "action": "把评论痛点升级成需求、阻碍、机会和内容回应策略。", "requires": "comments.normalized.json"},
+        ],
+        "viral-pattern": [
+            {"name": "爆款逆向包", "action": "升级到 `viral-reverse`，把高互动结构转成原创标题公式和封面脚本。", "requires": "notes.normalized.json"},
+            {"name": "标题/封面 A/B 包", "action": "基于样本模式生成多组原创标题和封面文案候选。", "requires": "workflow_report.md"},
+        ],
+        "deep-research": [
+            {"name": "决策备忘录", "action": "把需求、痛点、机会、风险整理成产品/运营决策 memo。", "requires": "workflow_report.md"},
+            {"name": "调研到内容包", "action": "把调研结论转成 `topic-bank`，再挑选题进入内容草稿。", "requires": "workflow_report.md"},
+        ],
+        "topic-bank": [
+            {"name": "发布日历", "action": "把选题库整理成 7/14/30 天发布计划。", "requires": "workflow_report.md"},
+            {"name": "图文生产包", "action": "挑 1-3 个选题接内容生成和 3:4 图文视觉方案。", "requires": "人工选择选题"},
+        ],
+        "viral-reverse": [
+            {"name": "原创模板库", "action": "把高互动模式沉淀成账号可复用的原创模板。", "requires": "workflow_report.md"},
+            {"name": "封面脚本包", "action": "为 3 个模板生成封面文案、视觉方向和首图提示词。", "requires": "workflow_report.md"},
+        ],
+        "general-research": [
+            {"name": "专项工作流选择", "action": "根据样本结果选择旅行、产品、评论、爆款、深度调研或选题库方向继续。", "requires": "workflow_report.md"},
+        ],
+    }
+    return packages.get(workflow, []) + common
+
+
 def note_table_rows(notes: list[dict], limit: int = 10) -> list[str]:
     lines = [
         "| Rank | Title | Author | Score | Likes | Collects | Comments | URL |",
@@ -1000,6 +1053,12 @@ def build_common_appendix(workflow: str, notes: list[dict], comments: list[dict]
         "",
         *(f"- {action}" for action in next_actions(workflow)),
         "",
+        "## 推荐串联工作流",
+        "",
+        "| Package | Action | Requires |",
+        "|---|---|---|",
+        *(f"| {package['name']} | {package['action']} | {package['requires']} |" for package in follow_up_packages(workflow)),
+        "",
         "## 素材包说明",
         "",
         "- 默认只整理笔记链接、图片 URL、视频 URL，不下载媒体文件。",
@@ -1049,6 +1108,7 @@ def build_workflow_summary(
         "errors": errors or [],
         "evidence_quality": evidence_quality(notes, comments),
         "next_actions": next_actions(workflow),
+        "follow_up_packages": follow_up_packages(workflow),
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "outputs": outputs or {},
     }

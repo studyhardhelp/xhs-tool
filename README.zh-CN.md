@@ -21,6 +21,7 @@ English documentation: [README.md](README.md)
 
 ```bash
 bash scripts/bootstrap_env.sh
+.venv/bin/python scripts/xhs_doctor.py
 .venv/bin/python scripts/xhs_auth.py login --wait-auto
 .venv/bin/python scripts/xhs_auth.py status --json
 .venv/bin/python scripts/xhs_workflow.py --workflow auto --topic "你的研究主题"
@@ -237,6 +238,25 @@ bash scripts/bootstrap_env.sh
 | `checkpoint.json` | 采集中断恢复用的检查点。 |
 | `llm_insights.md` | Token Platform 配置可用且启用 `--llm-insights` 时生成。 |
 
+## 安装后自检 / Install Doctor
+
+安装完成后，建议先运行：
+
+```bash
+.venv/bin/python scripts/xhs_doctor.py
+.venv/bin/python scripts/xhs_doctor.py --json
+```
+
+默认会检查 Python、Node.js、npm、Python 依赖、Node 依赖、runtime 完整性、浏览器可用性、本地登录态结构、Token Platform 配置和 `runs` 目录写入权限。默认不调用小红书实时接口。
+
+如需确认当前 Cookie 是否真的可调用小红书接口，再显式执行：
+
+```bash
+.venv/bin/python scripts/xhs_doctor.py --online-auth-check
+```
+
+`xhs_workflow.py` 生成的报告现在会附带“推荐串联工作流”，例如继续整理决策备忘录、选题库、内容草稿、图文方案、FAQ、笔记链接库或媒体 URL 复核。
+
 ## 安全与边界 / Security And Boundaries
 
 - 只处理用户授权或允许范围内的数据。
@@ -252,6 +272,7 @@ bash scripts/bootstrap_env.sh
 ```bash
 python -m unittest discover -s tests -v
 python scripts/verify_runtime.py
+.venv/bin/python scripts/xhs_doctor.py
 ```
 
 ## Python 兼容性 / Python Compatibility

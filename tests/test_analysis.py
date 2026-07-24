@@ -9,9 +9,11 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from xhs_report_lib import parse_publish_datetime, tokenize_chinese_and_ascii
 from xhs_workflow import (
     build_topic_bank_rows,
+    build_workflow_summary,
     build_workflow_report,
     evidence_quality,
     expand_queries,
+    follow_up_packages,
     infer_workflow,
     parse_trip_days,
     viral_template_rows,
@@ -85,6 +87,8 @@ class AnalysisTests(unittest.TestCase):
         self.assertIn("## 选题库", report)
         self.assertIn("封面钩子", report)
         self.assertIn("适合继续接 `scripts/xhs_content_chat.py`", report)
+        self.assertIn("## 推荐串联工作流", report)
+        self.assertIn("发布日历", report)
 
     def test_viral_reverse_workflow_outputs_original_templates(self):
         self.assertEqual(infer_workflow("复盘这些爆款为什么火"), "viral-reverse")
@@ -95,6 +99,22 @@ class AnalysisTests(unittest.TestCase):
         self.assertIn("## 爆款逆向复盘", report)
         self.assertIn("## 可复用原创模板", report)
         self.assertIn("不要复刻原笔记标题", report)
+
+    def test_workflow_summary_includes_follow_up_packages(self):
+        packages = follow_up_packages("deep-research")
+        self.assertTrue(any(package["name"] == "决策备忘录" for package in packages))
+        summary = build_workflow_summary(
+            "test-run",
+            "deep-research",
+            False,
+            "露营装备",
+            ["露营装备 用户需求"],
+            True,
+            [self.note],
+            [self.comment],
+        )
+        self.assertIn("follow_up_packages", summary)
+        self.assertTrue(summary["follow_up_packages"])
 
 
 if __name__ == "__main__":

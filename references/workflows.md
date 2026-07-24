@@ -10,7 +10,8 @@ The normal loop is:
 3. Collect a small, relevant sample of notes and comments.
 4. Normalize data into stable JSON/table files.
 5. Generate a Markdown report, evidence summary, spreadsheet files, and media URL index.
-6. Ask what follow-up package the user needs next.
+6. Present the recommended follow-up packages from `summary.json` / `workflow_report.md`.
+7. Ask what follow-up package the user needs next.
 
 Use `scripts/xhs_workflow.py --workflow auto` unless the user or operator explicitly chooses a workflow.
 
@@ -104,7 +105,7 @@ Even with `high`, conclusions remain sampling-based and should not be described 
 
 ## Follow-Up Options
 
-After the default report, ask which follow-up would help:
+After the default report, use the generated `follow_up_packages` field as the primary next-step menu. Typical packages include:
 
 - Deep report: refine the Markdown into a decision memo, travel plan, product brief, or content plan.
 - Token-platform insight: run `--llm-insights` to generate a model-written decision memo from the sampled evidence.

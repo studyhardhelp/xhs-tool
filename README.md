@@ -30,6 +30,7 @@ Chinese documentation: [README.zh-CN.md](README.zh-CN.md)
 
 ```bash
 bash scripts/bootstrap_env.sh
+.venv/bin/python scripts/xhs_doctor.py
 .venv/bin/python scripts/xhs_auth.py login --wait-auto
 .venv/bin/python scripts/xhs_auth.py status --json
 .venv/bin/python scripts/xhs_workflow.py --workflow auto --topic "your research topic"
@@ -57,6 +58,23 @@ Live collection is limited to 50 notes, 8 queries, 10 notes per query, and 100
 normalized comments per note. Defaults are smaller. A failed note or query is recorded
 and does not discard successful results.
 
+## Install Doctor
+
+Run the local doctor after installation or before a demo:
+
+```bash
+.venv/bin/python scripts/xhs_doctor.py
+.venv/bin/python scripts/xhs_doctor.py --json
+```
+
+By default, doctor checks Python, Node.js, npm, Python dependencies, Node dependencies, runtime integrity, browser availability, local auth structure, Token Platform configuration, and run-directory write access. It does not call the live XHS API unless explicitly requested:
+
+```bash
+.venv/bin/python scripts/xhs_doctor.py --online-auth-check
+```
+
+Workflow reports also include recommended follow-up packages so the user can continue from research to a decision memo, topic bank, content draft, visual plan, FAQ, note library, or media URL review.
+
 ## Security And Data Retention
 
 - Cookies are read from `.secrets/xhs_cookie.txt` or `XHS_COOKIE`; secret-bearing API payloads use standard input, not process arguments.
@@ -70,6 +88,7 @@ and does not discard successful results.
 ```bash
 python -m unittest discover -s tests -v
 python scripts/verify_runtime.py
+.venv/bin/python scripts/xhs_doctor.py
 ```
 
 ## Python Compatibility

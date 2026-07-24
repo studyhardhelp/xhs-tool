@@ -216,6 +216,15 @@ supported because the browser and spreadsheet dependencies no longer support tho
 end-of-life runtimes reliably. The signing runtime also requires Node.js 18+ and npm.
 It does not install Chromium by default. Set `XHS_INSTALL_BROWSER=1` only when the user explicitly agrees to install the optional skill-local Playwright Chromium fallback under `<skill-dir>/.browsers/`.
 
+Run install/readiness diagnostics after setup or before a demo:
+
+```bash
+.venv/bin/python scripts/xhs_doctor.py
+.venv/bin/python scripts/xhs_doctor.py --json
+```
+
+The doctor checks Python, Node.js, npm, Python dependencies, Node dependencies, runtime integrity, browser availability, local auth structure, Token Platform configuration, and run-directory write access. It does not call the live XHS API unless `--online-auth-check` is passed.
+
 Set up local browser login for non-technical users. Prefer Chrome explicitly when it is available:
 
 ```bash
